@@ -128,7 +128,7 @@ class WebsocketVoiceSession(pyee.asyncio.AsyncIOEventEmitter):
         else:
             response["errorType"] = "undefined"
             response["errorMessage"] = f"Unknown tool: {tool_name}"
-        await self._socket.send(json.dumps(response))    
+        await self._socket.send(json.dumps(response))
 
 
 async def _async_close(*awaitables_or_none: Awaitable | None):
@@ -166,7 +166,7 @@ async def _get_join_url() -> str:
         headers = {"X-API-Key": f"{os.getenv('ULTRAVOX_API_KEY', None)}"}
         system_prompt = args.system_prompt
         selected_tools = []
-        
+
         if args.secret_menu:
             system_prompt += "\n\nThere is also a secret menu that changes daily. If the user asks about it, use the getSecretMenu tool to look up today's secret menu items."
             selected_tools.append(
@@ -199,12 +199,9 @@ async def _get_join_url() -> str:
         body["initialMessages"] = [
             {
                 "role": "MESSAGE_ROLE_AGENT",
-                "text": "Hi, welcome to Dr. Donut. How can I help you today?"
+                "text": "Hi, welcome to Dr. Donut. How can I help you today?",
             },
-            {
-                "role": "MESSAGE_ROLE_USER",
-                "text": "I absolutely hate donuts!!!"
-            }
+            {"role": "MESSAGE_ROLE_USER", "text": "I absolutely hate donuts!!!"},
         ]
 
         body["initialOutputMedium"] = "MESSAGE_MEDIUM_TEXT"
