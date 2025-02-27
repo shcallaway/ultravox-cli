@@ -68,3 +68,20 @@ To format the code:
 ```bash
 black
 ```
+
+### Community
+
+- Report issues on GitHub
+- Contribute to discussions
+- Share your use-cases
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 (GPLv3). This means:
+
+- You can use this software for any purpose
+- You can modify and distribute this software
+- If you distribute modified versions, they must also be under GPLv3
+- All changes must be documented and source code must be available
+
+See the [LICENSE](LICENSE) file for the complete license text.
