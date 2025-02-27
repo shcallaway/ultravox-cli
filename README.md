@@ -33,7 +33,7 @@ pip install -r requirements.txt
 4. Run the CLI:
 
 ```bash
-python app.py
+python cli.py
 ```
 
 You can cleanup/reset your virtual environment by running:
