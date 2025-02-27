@@ -7,221 +7,97 @@ import logging
 import os
 import signal
 import sys
-import urllib.parse
-from typing import Any, AsyncGenerator, Awaitable, Literal
+from typing import Any, Dict, List, Optional, Callable
 
-import aiohttp
-import pyee.asyncio
-from websockets import exceptions as ws_exceptions
-from websockets.asyncio import client as ws_client
+from ultravox_cli.ultravox_client.client import UltravoxClient
+from ultravox_cli.ultravox_client.session.websocket_session import WebsocketSession
 
 
-class WebsocketVoiceSession(pyee.asyncio.AsyncIOEventEmitter):
-    """A websocket-based voice session that connects to an Ultravox call. The session continuously
-    streams audio in and out and emits events for state changes and agent messages."""
-
-    def __init__(self, join_url: str):
-        super().__init__()
-        self._state: Literal["idle", "listening", "thinking", "speaking"] = "idle"
-        self._pending_output = ""
-        self._url = join_url
-        self._socket = None
-        self._receive_task: asyncio.Task | None = None
-
-    async def start(self):
-        logging.info(f"Connecting to {self._url}")
-        self._socket = await ws_client.connect(self._url)
-        self._receive_task = asyncio.create_task(self._socket_receive(self._socket))
-
-    async def _socket_receive(self, socket: ws_client.ClientConnection):
-        try:
-            async for message in socket:
-                await self._on_socket_message(message)
-        except asyncio.CancelledError:
-            logging.info("socket cancelled")
-        except ws_exceptions.ConnectionClosedOK:
-            logging.info("socket closed ok")
-        except ws_exceptions.ConnectionClosedError as e:
-            self.emit("error", e)
-            return
-        logging.info("socket receive done")
-        self.emit("ended")
-
-    async def stop(self):
-        """End the session, closing the connection and ending the call."""
-        logging.info("Stopping...")
-        await _async_close(
-            # self._sink.close(),
-            self._socket.close() if self._socket else None,
-            _async_cancel(self._receive_task),
-        )
-        if self._state != "idle":
-            self._state = "idle"
-            self.emit("state", "idle")
-
-    async def _on_socket_message(self, payload: str | bytes):
-        if isinstance(payload, bytes):
-            # self._sink.write(payload)
-            return
-        elif isinstance(payload, str):
-            msg = json.loads(payload)
-            await self._handle_data_message(msg)
-
-    async def _handle_data_message(self, msg: dict[str, Any]):
-        match msg["type"]:
-            case "playback_clear_buffer":
-                # self._sink.drop_buffer()
-                pass
-            case "state":
-                if msg["state"] != self._state:
-                    self._state = msg["state"]
-                    self.emit("state", msg["state"])
-            case "transcript":
-                # This is lazy handling of transcripts. See the WebRTC client SDKs
-                # for a more robust implementation.
-                if msg["role"] != "agent":
-                    return  # Ignore user transcripts
-                if msg.get("text", None):
-                    self._pending_output = msg["text"]
-                    self.emit("output", msg["text"], msg["final"])
-                else:
-                    self._pending_output += msg.get("delta", "")
-                    self.emit("output", self._pending_output, msg["final"])
-                if msg["final"]:
-                    # print(f"Final message received, stopping: {self._pending_output}")
-                    self._pending_output = ""
-                    # await self.stop()
-            case "client_tool_invocation":
-                await self._handle_client_tool_call(
-                    msg["toolName"], msg["invocationId"], msg["parameters"]
-                )
-            case "debug":
-                logging.info(f"debug: {msg['message']}")
-            case _:
-                logging.warning(f"Unhandled message type: {msg['type']}")
-
-    async def _handle_client_tool_call(
-        self, tool_name: str, invocation_id: str, parameters: dict[str, Any]
-    ):
-        logging.info(f"client tool call: {tool_name}")
-        response: dict[str, str] = {
-            "type": "client_tool_result",
-            "invocationId": invocation_id,
-        }
-        if tool_name == "getSecretMenu":
-            menu = [
+async def get_secret_menu(parameters: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Handler for the getSecretMenu tool."""
+    return [
+        {
+            "date": datetime.date.today().isoformat(),
+            "items": [
                 {
-                    "date": datetime.date.today().isoformat(),
-                    "items": [
-                        {
-                            "name": "Banana Smoothie",
-                            "price": "$4.99",
-                        },
-                        {
-                            "name": "Butter Pecan Ice Cream (one scoop)",
-                            "price": "$2.99",
-                        },
-                    ],
+                    "name": "Banana Smoothie",
+                    "price": "$4.99",
                 },
-            ]
-            response["result"] = json.dumps(menu)
-        else:
-            response["errorType"] = "undefined"
-            response["errorMessage"] = f"Unknown tool: {tool_name}"
-        await self._socket.send(json.dumps(response))
-
-
-async def _async_close(*awaitables_or_none: Awaitable | None):
-    coros = [coro for coro in awaitables_or_none if coro is not None]
-    if coros:
-        maybe_exceptions = await asyncio.shield(
-            asyncio.gather(*coros, return_exceptions=True)
-        )
-        non_cancelled_exceptions = [
-            exc
-            for exc in maybe_exceptions
-            if isinstance(exc, Exception)
-            and not isinstance(exc, asyncio.CancelledError)
-        ]
-        if non_cancelled_exceptions:
-            to_report = (
-                non_cancelled_exceptions[0]
-                if len(non_cancelled_exceptions) == 1
-                else ExceptionGroup("Multiple failures", non_cancelled_exceptions)
-            )
-            logging.warning("Error during _async_close", exc_info=to_report)
-
-
-async def _async_cancel(*tasks_or_none: asyncio.Task | None):
-    tasks = [task for task in tasks_or_none if task is not None and task.cancel()]
-    await _async_close(*tasks)
-
-
-async def _get_join_url() -> str:
-    """Creates a new call, returning its join URL."""
-
-    target = "https://api.ultravox.ai/api/calls"
-
-    async with aiohttp.ClientSession() as session:
-        headers = {"X-API-Key": f"{os.getenv('ULTRAVOX_API_KEY', None)}"}
-        system_prompt = args.system_prompt
-        selected_tools = []
-
-        if args.secret_menu:
-            system_prompt += "\n\nThere is also a secret menu that changes daily. If the user asks about it, use the getSecretMenu tool to look up today's secret menu items."
-            selected_tools.append(
                 {
-                    "temporaryTool": {
-                        "modelToolName": "getSecretMenu",
-                        "description": "Looks up today's secret menu items.",
-                        "client": {},
-                    },
-                }
-            )
+                    "name": "Butter Pecan Ice Cream (one scoop)",
+                    "price": "$2.99",
+                },
+            ],
+        },
+    ]
 
-        body = {
-            "systemPrompt": system_prompt,
-            "temperature": args.temperature,
-            "medium": {
-                "serverWebSocket": {
-                    "inputSampleRate": 48000,
-                    "outputSampleRate": 48000,
-                    # Buffer up to 30s of audio client-side. This won't impact
-                    # interruptions because we handle playback_clear_buffer above.
-                    "clientBufferSizeMs": 30000,
-                }
-            },
-        }
-        if args.voice:
-            body["voice"] = args.voice
-        if selected_tools:
-            body["selectedTools"] = selected_tools
-        body["initialMessages"] = [
+
+async def create_call(client: UltravoxClient, args: argparse.Namespace) -> str:
+    """Creates a new call and returns its join URL."""
+    system_prompt = args.system_prompt
+    selected_tools: List[Dict[str, Any]] = []
+
+    if args.secret_menu:
+        system_prompt += "\n\nThere is also a secret menu that changes daily. If the user asks about it, use the getSecretMenu tool to look up today's secret menu items."
+        selected_tools.append(
             {
-                "role": "MESSAGE_ROLE_AGENT",
-                "text": "Hi, welcome to Dr. Donut. How can I help you today?",
-            },
-            {"role": "MESSAGE_ROLE_USER", "text": "I absolutely hate donuts!!!"},
-        ]
+                "temporaryTool": {
+                    "modelToolName": "getSecretMenu",
+                    "description": "Looks up today's secret menu items.",
+                    "client": {},
+                },
+            }
+        )
 
-        body["initialOutputMedium"] = "MESSAGE_MEDIUM_TEXT"
+    initial_messages = [
+        {
+            "role": "MESSAGE_ROLE_AGENT",
+            "text": "Hi, welcome to Dr. Donut. How can I help you today?",
+        },
+        {"role": "MESSAGE_ROLE_USER", "text": "I absolutely hate donuts!!!"},
+    ]
 
-        logging.info(f"Creating call with body: {body}")
-        async with session.post(target, headers=headers, json=body) as response:
-            response.raise_for_status()
-            response_json = await response.json()
-            join_url = response_json["joinUrl"]
+    medium = {
+        "serverWebSocket": {
+            "inputSampleRate": 48000,
+            "outputSampleRate": 48000,
+            "clientBufferSizeMs": 30000,
+        }
+    }
+
+    try:
+        response = await client.calls.create(
+            system_prompt=system_prompt,
+            temperature=args.temperature,
+            voice=args.voice if args.voice else None,
+            selected_tools=selected_tools if selected_tools else None,
+            initial_messages=initial_messages,
+            initial_output_medium="MESSAGE_MEDIUM_TEXT",
+            medium=medium,
+        )
+
+        if not response or "joinUrl" not in response:
+            raise ValueError("Invalid response from API: missing joinUrl")
+        join_url = response["joinUrl"]
+
+        # Add query parameters
+        if args.api_version:
+            join_url = _add_query_param(join_url, "apiVersion", str(args.api_version))
+        if args.experimental_messages:
             join_url = _add_query_param(
-                join_url, "apiVersion", str(args.api_version or 1)
+                join_url, "experimentalMessages", args.experimental_messages
             )
-            if args.experimental_messages:
-                join_url = _add_query_param(
-                    join_url, "experimentalMessages", args.experimental_messages
-                )
-            return join_url
+
+        return join_url
+    except Exception as e:
+        logging.error(f"Failed to create call: {e}")
+        raise
 
 
 def _add_query_param(url: str, key: str, value: str) -> str:
+    """Add a query parameter to a URL."""
+    import urllib.parse
+
     url_parts = list(urllib.parse.urlparse(url))
     query = dict(urllib.parse.parse_qsl(url_parts[4]))
     query.update({key: value})
@@ -229,51 +105,62 @@ def _add_query_param(url: str, key: str, value: str) -> str:
     return urllib.parse.urlunparse(url_parts)
 
 
-async def main():
-    join_url = await _get_join_url()
-    client = WebsocketVoiceSession(join_url)
+async def main() -> None:
+    # Initialize the client
+    api_key = os.getenv("ULTRAVOX_API_KEY")
+    if not api_key:
+        raise ValueError("ULTRAVOX_API_KEY environment variable is not set")
+    client = UltravoxClient(api_key=api_key)
+
+    # Create the call and get join URL
+    join_url = await create_call(client, args)
+
+    # Join the call
+    session = await client.join_call(join_url)
+
+    # Register the secret menu tool if needed
+    if args.secret_menu:
+        session.register_tool("getSecretMenu", get_secret_menu)
+
     done = asyncio.Event()
     loop = asyncio.get_running_loop()
+    final_inference: Optional[str] = None
 
-    final_inference = None
-
-    @client.on("state")
-    async def on_state(state):
+    @session.on("state")
+    async def on_state(state: str) -> None:
         if state == "listening":
-            # Used to prompt the user to speak
             print("User:  ", end="\r")
         elif state == "thinking":
             print("Agent 1: ", end="\r")
 
-    @client.on("output")
-    async def on_output(text, final):
+    @session.on("output")
+    async def on_output(text: str, final: bool) -> None:
         nonlocal final_inference
         display_text = f"{text.strip()}"
         print("Agent 2: " + display_text, end="\n" if final else "\r")
         if final:
             final_inference = display_text
-            await client.stop()
+            await session.stop()
 
-    @client.on("error")
-    async def on_error(error):
+    @session.on("error")
+    async def on_error(error: Exception) -> None:
         logging.exception("Client error", exc_info=error)
         print(f"Error: {error}")
         done.set()
 
-    @client.on("ended")
-    async def on_ended():
+    @session.on("ended")
+    async def on_ended() -> None:
         print("Session ended")
         done.set()
 
     loop.add_signal_handler(signal.SIGINT, lambda: done.set())
     loop.add_signal_handler(signal.SIGTERM, lambda: done.set())
-    await client.start()
+
+    await session.start()
     await done.wait()
-    await client.stop()
+    await session.stop()
 
     print(f"Final inference: {final_inference}")
-
-    # Do my eval on final inference
 
 
 if __name__ == "__main__":

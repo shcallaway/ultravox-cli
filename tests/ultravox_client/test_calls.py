@@ -24,7 +24,7 @@ async def test_list_calls(calls_api: CallsAPI, mock_client: MagicMock) -> None:
     mock_client.request.return_value = mock_response
 
     result = await calls_api.list(limit=10, offset=0)
-    
+
     mock_client.request.assert_called_once_with(
         "GET", "calls", params={"limit": 10, "offset": 0}
     )
@@ -39,7 +39,7 @@ async def test_get_call(calls_api: CallsAPI, mock_client: MagicMock) -> None:
     mock_client.request.return_value = mock_response
 
     result = await calls_api.get(call_id)
-    
+
     mock_client.request.assert_called_once_with("GET", f"calls/{call_id}")
     assert result == mock_response
 
@@ -52,7 +52,7 @@ async def test_create_call(calls_api: CallsAPI, mock_client: MagicMock) -> None:
 
     # Test with minimal parameters
     result = await calls_api.create(system_prompt="Test prompt")
-    
+
     expected_body = {
         "systemPrompt": "Test prompt",
         "temperature": 0.8,
@@ -65,8 +65,10 @@ async def test_create_call(calls_api: CallsAPI, mock_client: MagicMock) -> None:
         },
         "initialOutputMedium": "MESSAGE_MEDIUM_TEXT",
     }
-    
-    mock_client.request.assert_called_once_with("POST", "calls", json_data=expected_body)
+
+    mock_client.request.assert_called_once_with(
+        "POST", "calls", json_data=expected_body
+    )
     assert result == mock_response
 
     # Test with all parameters
@@ -83,7 +85,7 @@ async def test_create_call(calls_api: CallsAPI, mock_client: MagicMock) -> None:
         selected_tools=tools,
         initial_messages=messages,
         medium=medium,
-        extra_param="value"
+        extra_param="value",
     )
 
     expected_body = {
@@ -94,10 +96,12 @@ async def test_create_call(calls_api: CallsAPI, mock_client: MagicMock) -> None:
         "voice": voice,
         "selectedTools": tools,
         "initialMessages": messages,
-        "extra_param": "value"
+        "extra_param": "value",
     }
 
-    mock_client.request.assert_called_once_with("POST", "calls", json_data=expected_body)
+    mock_client.request.assert_called_once_with(
+        "POST", "calls", json_data=expected_body
+    )
     assert result == mock_response
 
 
@@ -109,7 +113,7 @@ async def test_get_messages(calls_api: CallsAPI, mock_client: MagicMock) -> None
     mock_client.request.return_value = mock_response
 
     result = await calls_api.get_messages(call_id)
-    
+
     mock_client.request.assert_called_once_with("GET", f"calls/{call_id}/messages")
     assert result == mock_response
 
@@ -122,7 +126,7 @@ async def test_get_tools(calls_api: CallsAPI, mock_client: MagicMock) -> None:
     mock_client.request.return_value = mock_response
 
     result = await calls_api.get_tools(call_id)
-    
+
     mock_client.request.assert_called_once_with("GET", f"calls/{call_id}/tools")
     assert result == mock_response
 
@@ -135,7 +139,7 @@ async def test_get_recording(calls_api: CallsAPI, mock_client: MagicMock) -> Non
     mock_client.request.return_value = mock_response
 
     result = await calls_api.get_recording(call_id)
-    
+
     mock_client.request.assert_called_once_with("GET", f"calls/{call_id}/recording")
     assert result == mock_response
 
@@ -150,4 +154,4 @@ def test_add_query_param(calls_api: CallsAPI) -> None:
     # Test with no existing query parameters
     url = "https://example.com/path"
     result = calls_api.add_query_param(url, "key", "value")
-    assert result == "https://example.com/path?key=value" 
+    assert result == "https://example.com/path?key=value"

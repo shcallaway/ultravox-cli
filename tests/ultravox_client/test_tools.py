@@ -24,7 +24,7 @@ async def test_list_tools(tools_api: ToolsAPI, mock_client: MagicMock) -> None:
     mock_client.request.return_value = mock_response
 
     result = await tools_api.list(limit=10, offset=0)
-    
+
     mock_client.request.assert_called_once_with(
         "GET", "tools", params={"limit": 10, "offset": 0}
     )
@@ -39,7 +39,7 @@ async def test_get_tool(tools_api: ToolsAPI, mock_client: MagicMock) -> None:
     mock_client.request.return_value = mock_response
 
     result = await tools_api.get(tool_id)
-    
+
     mock_client.request.assert_called_once_with("GET", f"tools/{tool_id}")
     assert result == mock_response
 
@@ -54,16 +54,14 @@ async def test_create_tool(tools_api: ToolsAPI, mock_client: MagicMock) -> None:
     name = "test_tool"
     description = "A test tool"
     schema = {"type": "object", "properties": {}}
-    
+
     result = await tools_api.create(name=name, description=description, schema=schema)
-    
-    expected_body = {
-        "name": name,
-        "description": description,
-        "schema": schema
-    }
-    
-    mock_client.request.assert_called_once_with("POST", "tools", json_data=expected_body)
+
+    expected_body = {"name": name, "description": description, "schema": schema}
+
+    mock_client.request.assert_called_once_with(
+        "POST", "tools", json_data=expected_body
+    )
     assert result == mock_response
 
     # Test with function URL and additional parameters
@@ -76,7 +74,7 @@ async def test_create_tool(tools_api: ToolsAPI, mock_client: MagicMock) -> None:
         description=description,
         schema=schema,
         function_url=function_url,
-        extra_param=extra_param
+        extra_param=extra_param,
     )
 
     expected_body = {
@@ -84,10 +82,12 @@ async def test_create_tool(tools_api: ToolsAPI, mock_client: MagicMock) -> None:
         "description": description,
         "schema": schema,
         "functionUrl": function_url,
-        "extra_param": extra_param
+        "extra_param": extra_param,
     }
 
-    mock_client.request.assert_called_once_with("POST", "tools", json_data=expected_body)
+    mock_client.request.assert_called_once_with(
+        "POST", "tools", json_data=expected_body
+    )
     assert result == mock_response
 
 
@@ -117,7 +117,7 @@ async def test_update_tool(tools_api: ToolsAPI, mock_client: MagicMock) -> None:
         description=description,
         schema=schema,
         function_url=function_url,
-        extra_param=extra_param
+        extra_param=extra_param,
     )
 
     expected_body = {
@@ -125,7 +125,7 @@ async def test_update_tool(tools_api: ToolsAPI, mock_client: MagicMock) -> None:
         "description": description,
         "schema": schema,
         "functionUrl": function_url,
-        "extra_param": extra_param
+        "extra_param": extra_param,
     }
 
     mock_client.request.assert_called_once_with(
@@ -142,6 +142,6 @@ async def test_delete_tool(tools_api: ToolsAPI, mock_client: MagicMock) -> None:
     mock_client.request.return_value = mock_response
 
     result = await tools_api.delete(tool_id)
-    
+
     mock_client.request.assert_called_once_with("DELETE", f"tools/{tool_id}")
-    assert result == mock_response 
+    assert result == mock_response

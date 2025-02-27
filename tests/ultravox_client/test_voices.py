@@ -24,7 +24,7 @@ async def test_list_voices(voices_api: VoicesAPI, mock_client: MagicMock) -> Non
     mock_client.request.return_value = mock_response
 
     result = await voices_api.list(limit=10, offset=0)
-    
+
     mock_client.request.assert_called_once_with(
         "GET", "voices", params={"limit": 10, "offset": 0}
     )
@@ -39,7 +39,7 @@ async def test_get_voice(voices_api: VoicesAPI, mock_client: MagicMock) -> None:
     mock_client.request.return_value = mock_response
 
     result = await voices_api.get(voice_id)
-    
+
     mock_client.request.assert_called_once_with("GET", f"voices/{voice_id}")
     assert result == mock_response
 
@@ -53,9 +53,11 @@ async def test_create_clone(voices_api: VoicesAPI, mock_client: MagicMock) -> No
     # Test with minimal parameters
     name = "test_voice"
     result = await voices_api.create_clone(name=name)
-    
+
     expected_body = {"name": name}
-    mock_client.request.assert_called_once_with("POST", "voices", json_data=expected_body)
+    mock_client.request.assert_called_once_with(
+        "POST", "voices", json_data=expected_body
+    )
     assert result == mock_response
 
     # Test with all parameters
@@ -65,20 +67,19 @@ async def test_create_clone(voices_api: VoicesAPI, mock_client: MagicMock) -> No
     extra_param = "value"
 
     result = await voices_api.create_clone(
-        name=name,
-        description=description,
-        audio_url=audio_url,
-        extra_param=extra_param
+        name=name, description=description, audio_url=audio_url, extra_param=extra_param
     )
 
     expected_body = {
         "name": name,
         "description": description,
         "audioUrl": audio_url,
-        "extra_param": extra_param
+        "extra_param": extra_param,
     }
 
-    mock_client.request.assert_called_once_with("POST", "voices", json_data=expected_body)
+    mock_client.request.assert_called_once_with(
+        "POST", "voices", json_data=expected_body
+    )
     assert result == mock_response
 
 
@@ -90,6 +91,6 @@ async def test_delete_voice(voices_api: VoicesAPI, mock_client: MagicMock) -> No
     mock_client.request.return_value = mock_response
 
     result = await voices_api.delete(voice_id)
-    
+
     mock_client.request.assert_called_once_with("DELETE", f"voices/{voice_id}")
-    assert result == mock_response 
+    assert result == mock_response

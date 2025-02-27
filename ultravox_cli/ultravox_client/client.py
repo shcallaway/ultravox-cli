@@ -89,17 +89,31 @@ class UltravoxClient:
             aiohttp.ClientError: If the request fails
         """
         url = f"{self.base_url}/{path.lstrip('/')}"
+        logging.debug(f"Making request to {url} with method {method}")
+        if json_data:
+            logging.debug(f"Request body: {json_data}")
 
-        async with aiohttp.ClientSession() as session:
-            async with session.request(
-                method=method,
-                url=url,
-                params=params,
-                json=json_data,
-                headers=self.headers,
-            ) as response:
-                await response.raise_for_status()
-                return await response.json()
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.request(
+                    method=method,
+                    url=url,
+                    params=params,
+                    json=json_data,
+                    headers=self.headers,
+                ) as response:
+                    if response.status >= 400:
+                        error_text = await response.text()
+                        raise aiohttp.ClientResponseError(
+                            request_info=response.request_info,
+                            history=response.history,
+                            status=response.status,
+                            message=f"Request failed: {error_text}",
+                        )
+                    return await response.json()
+        except aiohttp.ClientError as e:
+            logging.error(f"Request failed: {e}")
+            raise
 
     async def join_call(self, join_url: str) -> WebsocketSession:
         """

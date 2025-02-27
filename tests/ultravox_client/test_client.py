@@ -51,7 +51,9 @@ class TestUltravoxClient(unittest.TestCase):
         # Set up the mock
         mock_response = AsyncMock()
         mock_response.status = 400
-        mock_response.raise_for_status = AsyncMock(side_effect=aiohttp.ClientError("Test error"))
+        mock_response.raise_for_status = AsyncMock(
+            side_effect=aiohttp.ClientError("Test error")
+        )
         mock_response.json = AsyncMock(return_value={"error": "Test error"})
         mock_request.return_value.__aenter__.return_value = mock_response
 
@@ -97,18 +99,24 @@ def test_client_init() -> None:
     assert client.base_url == custom_url
 
 
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 class AsyncContextManagerMock(Generic[T], AsyncContextManager[T]):
     """A mock that can be used as an async context manager."""
+
     def __init__(self, return_value: T) -> None:
         self.return_value = return_value
 
     async def __aenter__(self) -> T:
         return self.return_value
 
-    async def __aexit__(self, exc_type: Optional[type], exc_val: Optional[BaseException], 
-                        exc_tb: Optional[Any]) -> None:
+    async def __aexit__(
+        self,
+        exc_type: Optional[type],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[Any],
+    ) -> None:
         pass
 
 
@@ -119,7 +127,7 @@ class MockSession:
     def request(self, *args: Any, **kwargs: Any) -> AsyncContextManagerMock:
         return AsyncContextManagerMock(self.response)
 
-    async def __aenter__(self) -> 'MockSession':
+    async def __aenter__(self) -> "MockSession":
         return self
 
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
@@ -143,10 +151,10 @@ async def test_request_success():
 @pytest.mark.asyncio
 async def test_request_error():
     client = UltravoxClient("test_key")
-    
+
     async def raise_error():
         raise aiohttp.ClientError()
-    
+
     mock_response = AsyncMock()
     mock_response.raise_for_status.side_effect = raise_error
     mock_response.json = AsyncMock()
@@ -166,7 +174,7 @@ async def test_join_call() -> None:
     """Test joining a call."""
     client = UltravoxClient(api_key="test_key")
     join_url = "wss://example.com/join"
-    
+
     session = await client.join_call(join_url)
     assert isinstance(session, WebsocketSession)
     assert session._url == join_url

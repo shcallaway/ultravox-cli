@@ -32,4 +32,4 @@ def mock_websocket() -> MagicMock:
     socket.close = AsyncMock()
     socket.send = AsyncMock()
     socket.__aiter__ = AsyncMock()
-    return socket 
+    return socket
