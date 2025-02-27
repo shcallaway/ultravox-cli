@@ -1,0 +1,36 @@
+[flake8]
+exclude =
+    .git,
+    __pycache__,
+    build,
+    dist,
+    *.egg-info,
+    venv,
+    .venv,
+    setup.py
+max-line-length = 88
+extend-ignore =
+    # E203: Whitespace before ':' (conflicts with Black)
+    E203,
+    # W503: Line break before binary operator (conflicts with Black)
+    W503,
+    # D107: Missing docstring in __init__ (too strict)
+    D107,
+    # D102: Missing docstring in public method (for test files)
+    D102,
+    # D200: One-line docstring should fit on one line with quotes
+    D200,
+    # D212: Multi-line docstring summary should start at the first line
+    D212,
+    # D100: Missing docstring in public module
+    D100
+per-file-ignores =
+    # F401: Module imported but unused
+    __init__.py: F401
+    # Disable certain docstring checks for test files
+    tests/*: D100,D101,D102,D103,D104,D200,D212
+max-complexity = 10
+statistics = True
+count = True
+show-source = True
+docstring-convention = google

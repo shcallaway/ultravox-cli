@@ -1,0 +1,17 @@
+black>=24.1.0
+flake8>=7.0.0
+mypy>=1.8.0
+openai==1.63.2
+pytest>=7.0.0
+python-dotenv==1.0.1
+requests>=2.31.0
+types-flask==1.1.6
+types-requests>=2.31.0
+types-setuptools>=69.0.0
+typing-extensions>=4.9.0
+ultravox-client==0.0.8
+aiohttp>=3.11.11
+numpy>=2.2.1
+pyee>=11.1.1
+sounddevice>=0.5.1
+websockets>=14.1
