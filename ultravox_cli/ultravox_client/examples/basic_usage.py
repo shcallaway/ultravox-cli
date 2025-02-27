@@ -6,7 +6,7 @@ Basic example of using the UltravoxClient to create and interact with a call.
 import asyncio
 import logging
 import os
-from typing import Dict, Any, List, NoReturn
+from typing import Dict, Any, List
 
 from ultravox_client import UltravoxClient
 

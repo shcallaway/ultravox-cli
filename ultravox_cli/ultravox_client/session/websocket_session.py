@@ -1,8 +1,7 @@
 import asyncio
-import datetime
 import json
 import logging
-from typing import Any, Awaitable, Callable, Dict, List, Literal, Optional, Union
+from typing import Any, Awaitable, Callable, Dict, Literal, Optional, Union
 
 import pyee.asyncio
 from websockets import exceptions as ws_exceptions
