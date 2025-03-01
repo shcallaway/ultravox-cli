@@ -2,10 +2,15 @@
 
 A simple CLI that allows you to "chat" with an Ultravox voice agent. See Ultravox documentation [here](https://www.ultravox.ai/).
 
+Ultravox is an AI voice agent platform that enables natural and engaging voice conversations. This CLI tool provides a simple interface to interact with Ultravox agents directly from your terminal.
+
 ## Prerequisites
 
 - Python 3.10+
 - pip
+- Ultravox API key (obtain from [Ultravox dashboard](https://www.ultravox.ai/))
+- Microphone hardware (for voice input)
+- Speaker/headphones (for voice output)
 
 ## Setup
 
@@ -43,37 +48,74 @@ deactivate
 rm -rf venv
 ```
 
+## Configuration
+
+Create a `.env` file in the project root with your Ultravox API credentials:
+
+```
+ULTRAVOX_API_KEY=your_api_key_here
+ULTRAVOX_AGENT_ID=your_agent_id_here
+```
+
+## Usage
+
+Once the CLI is running, you can interact with the Ultravox agent:
+
+```
+$ python cli.py
+Welcome to Ultravox CLI!
+> hello
+Agent: Hello! How can I assist you today?
+> tell me about the weather
+Agent: I don't have real-time weather data. Would you like me to explain how to get weather information?
+> exit
+Goodbye!
+```
+
+Common commands:
+
+- `exit` or `quit` - Exit the CLI
+- `help` - Show available commands
+- `restart` - Start a new conversation
+
 ## Development
 
 To run the tests:
 
 ```bash
-pytest
+python -m pytest
 ```
 
 To run the linter:
 
 ```bash
-flake8
+python -m flake8
 ```
 
 To run the type checker:
 
 ```bash
-mypy
+python -m mypy .
 ```
 
 To format the code:
 
 ```bash
-black
+python -m black .
 ```
+
+## Troubleshooting
+
+- **API Connection Issues**: Verify your internet connection and API credentials
+- **Microphone Not Working**: Check your system's audio input settings
+- **Python Version Errors**: Ensure you're using Python 3.10 or later
 
 ### Community
 
-- Report issues on GitHub
-- Contribute to discussions
-- Share your use-cases
+- Report issues on [GitHub Issues](https://github.com/yourusername/ultravox-cli/issues)
+- Contribute to discussions in the [Discussions tab](https://github.com/yourusername/ultravox-cli/discussions)
+- Share your use-cases with the community
+- Contact maintainers through GitHub or the Ultravox community channels
 
 ## License
 
