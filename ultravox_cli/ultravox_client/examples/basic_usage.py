@@ -6,7 +6,7 @@ Basic example of using the UltravoxClient to create and interact with a call.
 import asyncio
 import logging
 import os
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 from ultravox_client import UltravoxClient
 
@@ -63,7 +63,9 @@ async def main() -> None:
 
         # Create a new call
         call = await client.calls.create(
-            system_prompt="You are a helpful assistant with access to a calculator tool.",
+            system_prompt=(
+                "You are a helpful assistant with access to a calculator tool."
+            ),
             voice="claude",  # Replace with an actual voice ID from the voices list
             selected_tools=[
                 {"name": "calculator"}

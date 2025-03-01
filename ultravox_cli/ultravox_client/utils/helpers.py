@@ -4,7 +4,7 @@ Helper utilities for the Ultravox client.
 
 import json
 import logging
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional
 
 
 def format_query_params(params: Optional[Dict[str, Any]] = None) -> str:

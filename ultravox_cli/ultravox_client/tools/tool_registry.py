@@ -3,9 +3,8 @@ Tool registry for managing client-side tools.
 """
 
 import inspect
-import json
 import logging
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 

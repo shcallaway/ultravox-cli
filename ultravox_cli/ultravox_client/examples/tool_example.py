@@ -149,7 +149,9 @@ async def main() -> None:
     try:
         # Create a new call with the registered tools
         call = await client.calls.create(
-            system_prompt="You are a helpful assistant with access to calculator and weather tools.",
+            system_prompt=(
+                "You are a helpful assistant with calculator and weather tools."
+            ),
             voice="claude",  # Replace with an actual voice ID
             selected_tools=[
                 {"name": "calculator"},

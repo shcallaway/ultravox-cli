@@ -1,23 +1,19 @@
 import asyncio
 import json
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 from typing import (
     Any,
     Dict,
-    Generator,
-    Literal,
-    cast,
     List,
     AsyncIterator,
-    Optional,
     TypeVar,
     Generic,
+    Literal,
+    cast,
 )
+from unittest.mock import patch, MagicMock, AsyncMock
+import pytest
 
 from websockets import exceptions as ws_exceptions
-from websockets.asyncio import client as ws_client
-from aiohttp import WSMsgType
 from websockets.frames import Close
 
 from ultravox_cli.ultravox_client.session.websocket_session import WebsocketSession

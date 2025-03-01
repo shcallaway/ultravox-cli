@@ -1,6 +1,5 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from typing import Any, Dict
 
 from ultravox_cli.ultravox_client.api.calls import CallsAPI
 

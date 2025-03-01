@@ -101,14 +101,7 @@ class UltravoxClient:
                     json=json_data,
                     headers=self.headers,
                 ) as response:
-                    if response.status >= 400:
-                        error_text = await response.text()
-                        raise aiohttp.ClientResponseError(
-                            request_info=response.request_info,
-                            history=response.history,
-                            status=response.status,
-                            message=f"Request failed: {error_text}",
-                        )
+                    await response.raise_for_status()
                     return await response.json()
         except aiohttp.ClientError as e:
             logging.error(f"Request failed: {e}")

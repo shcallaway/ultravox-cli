@@ -16,7 +16,8 @@ class WebsocketSession(pyee.asyncio.AsyncIOEventEmitter):
     and agent messages. It also handles client tool invocations.
 
     Events:
-        - state: Emitted when the call state changes (idle, listening, thinking, speaking)
+        - state: Emitted when the call state changes (idle, listening, thinking,
+          speaking)
         - output: Emitted when the agent produces output (text, final)
         - error: Emitted when an error occurs
         - ended: Emitted when the session ends
@@ -201,7 +202,10 @@ class WebsocketSession(pyee.asyncio.AsyncIOEventEmitter):
                 to_report = non_cancelled_exceptions[0]
             else:
                 # Create a message with all exceptions instead of using ExceptionGroup
-                error_msg = f"Multiple failures: {', '.join(str(e) for e in non_cancelled_exceptions)}"
+                error_msg = (
+                    f"Multiple failures: "
+                    f"{', '.join(str(e) for e in non_cancelled_exceptions)}"
+                )
                 to_report = RuntimeError(error_msg)
 
             logging.warning("Error during async close", exc_info=to_report)
