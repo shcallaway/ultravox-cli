@@ -133,13 +133,13 @@ async def main() -> None:
         if state == "listening":
             print("User:  ", end="\r")
         elif state == "thinking":
-            print("Agent 1: ", end="\r")
+            print("Agent: ", end="\r")
 
     @session.on("output")  # type: ignore
     async def on_output(text: str, final: bool) -> None:
         nonlocal final_inference
         display_text = f"{text.strip()}"
-        print("Agent 2: " + display_text, end="\n" if final else "\r")
+        print("Agent: " + display_text, end="\n" if final else "\r")
         if final:
             final_inference = display_text
             await session.stop()
