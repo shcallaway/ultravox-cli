@@ -101,8 +101,11 @@ class UltravoxClient:
                     json=json_data,
                     headers=self.headers,
                 ) as response:
-                    await response.raise_for_status()
-                    return await response.json()
+                    # Check for HTTP errors (don't await, it's not a coroutine)
+                    response.raise_for_status()
+                    # Get the JSON response
+                    result = await response.json()
+                    return result
         except aiohttp.ClientError as e:
             logging.error(f"Request failed: {e}")
             raise

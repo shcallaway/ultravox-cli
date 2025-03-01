@@ -34,7 +34,7 @@ class TestUltravoxClient(unittest.TestCase):
         mock_response = AsyncMock()
         mock_response.status = 200
         mock_response.json = AsyncMock(return_value={"key": "value"})
-        mock_response.raise_for_status = AsyncMock()
+        mock_response.raise_for_status = MagicMock()
         mock_request.return_value.__aenter__.return_value = mock_response
 
         # Run the test
@@ -43,7 +43,7 @@ class TestUltravoxClient(unittest.TestCase):
         # Check the result
         self.assertEqual(result, {"key": "value"})
         mock_request.assert_called_once()
-        mock_response.raise_for_status.assert_awaited_once()
+        mock_response.raise_for_status.assert_called_once()
 
     @patch("aiohttp.ClientSession.request")
     def test_request_error(self, mock_request: MagicMock) -> None:
@@ -51,7 +51,7 @@ class TestUltravoxClient(unittest.TestCase):
         # Set up the mock
         mock_response = AsyncMock()
         mock_response.status = 400
-        mock_response.raise_for_status = AsyncMock(
+        mock_response.raise_for_status = MagicMock(
             side_effect=aiohttp.ClientError("Test error")
         )
         mock_response.json = AsyncMock(return_value={"error": "Test error"})
@@ -60,6 +60,9 @@ class TestUltravoxClient(unittest.TestCase):
         # Run the test
         with self.assertRaises(aiohttp.ClientError):
             asyncio.run(self.client.request("GET", "/test"))
+
+        mock_request.assert_called_once()
+        mock_response.raise_for_status.assert_called_once()
 
     @patch("ultravox_cli.ultravox_client.session.websocket_session.ws_client.connect")
     def test_join_call(self, mock_connect: MagicMock) -> None:
@@ -138,7 +141,7 @@ class MockSession:
 async def test_request_success():
     mock_response = AsyncMock()
     mock_response.json.return_value = {"data": "test"}
-    mock_response.raise_for_status = AsyncMock()
+    mock_response.raise_for_status = MagicMock()
 
     mock_session = MockSession(mock_response)
 
@@ -146,17 +149,19 @@ async def test_request_success():
         client = UltravoxClient("test_token")
         response = await client.request("GET", "/test")
         assert response == {"data": "test"}
+        mock_response.raise_for_status.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_request_error():
     client = UltravoxClient("test_key")
 
-    async def raise_error():
+    # Create a synchronous error-raising function
+    def raise_error():
         raise aiohttp.ClientError()
 
     mock_response = AsyncMock()
-    mock_response.raise_for_status.side_effect = raise_error
+    mock_response.raise_for_status = MagicMock(side_effect=raise_error)
     mock_response.json = AsyncMock()
 
     mock_session = MockSession(mock_response)
@@ -165,8 +170,8 @@ async def test_request_error():
         with pytest.raises(aiohttp.ClientError):
             await client.request("GET", "/test")
 
-    mock_response.raise_for_status.assert_awaited_once()
-    mock_response.json.assert_not_awaited()
+    mock_response.raise_for_status.assert_called_once()
+    mock_response.json.assert_not_called()
 
 
 @pytest.mark.asyncio
