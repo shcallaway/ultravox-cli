@@ -57,26 +57,60 @@ ULTRAVOX_API_KEY=your_api_key_here
 ULTRAVOX_AGENT_ID=your_agent_id_here
 ```
 
+## Features
+
+### Multi-turn Conversations
+
+The CLI now supports multi-turn conversations with UltraVox agents! This means you can have continuous, back-and-forth dialog with the agent without having to restart the session after each exchange.
+
+#### How it works
+
+- When the CLI starts, it displays the agent's initial greeting.
+- You can then type your message and press Enter to send it to the agent.
+- The agent responds, and you can continue the conversation with another message.
+- The conversation loop continues until you type an exit command like "exit", "quit", or "bye".
+
+#### Technical Implementation
+
+The multi-turn conversation feature is implemented using UltraVox's `inputTextMessage` API endpoint. Each user message is sent as a structured payload following the UltraVox schema, which includes:
+
+- The text message content
+- The conversation session information
+- Required identifiers for message tracking
+
+Behind the scenes, the CLI maintains the WebSocket connection with the UltraVox agent throughout the entire conversation, enabling a seamless dialog experience.
+
 ## Usage
 
-Once the CLI is running, you can interact with the Ultravox agent:
+Once the CLI is running, you can interact with the Ultravox agent in a multi-turn conversation:
 
 ```
 $ python cli.py
-Welcome to Ultravox CLI!
-> hello
+Welcome to UltraVox CLI! Type 'exit', 'quit', or 'bye' to end the conversation.
 Agent: Hello! How can I assist you today?
-> tell me about the weather
+User: hello
+Agent: Hello! How can I assist you today?
+User: tell me about the weather
 Agent: I don't have real-time weather data. Would you like me to explain how to get weather information?
-> exit
+User: yes please
+Agent: To get weather information, you can use weather websites like Weather.com or AccuWeather,
+download weather apps on your smartphone, or check local news websites. Many digital assistants
+like Siri or Google Assistant can also provide weather forecasts when asked. Would you like to
+know about any specific weather service?
+User: no thanks, that's helpful
+Agent: You're welcome! I'm glad I could help. If you have any other questions, feel free to ask.
+User: exit
 Goodbye!
+Session ended.
 ```
 
-Common commands:
+The CLI now supports continuous conversation with the agent until you decide to exit.
 
-- `exit` or `quit` - Exit the CLI
-- `help` - Show available commands
-- `restart` - Start a new conversation
+Exit commands:
+
+- `exit` - Exit the conversation
+- `quit` - Exit the conversation
+- `bye` - Exit the conversation
 
 ## Development
 

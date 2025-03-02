@@ -127,6 +127,9 @@ async def main() -> None:
     done = asyncio.Event()
     loop = asyncio.get_running_loop()
     final_inference: Optional[str] = None
+    # Track the agent's latest response for multi-turn conversation
+    agent_response: str = ""
+    is_conversation_active: bool = True
 
     @session.on("state")  # type: ignore
     async def on_state(state: str) -> None:
@@ -137,12 +140,13 @@ async def main() -> None:
 
     @session.on("output")  # type: ignore
     async def on_output(text: str, final: bool) -> None:
-        nonlocal final_inference
+        nonlocal final_inference, agent_response
         display_text = f"{text.strip()}"
         print("Agent: " + display_text, end="\n" if final else "\r")
         if final:
             final_inference = display_text
-            await session.stop()
+            agent_response = display_text
+            # Don't end the session after the agent responds in multi-turn mode
 
     @session.on("error")  # type: ignore
     async def on_error(error: Exception) -> None:
@@ -159,10 +163,47 @@ async def main() -> None:
     loop.add_signal_handler(signal.SIGTERM, lambda: done.set())
 
     await session.start()
+    
+    print("Welcome to UltraVox CLI! Type 'exit', 'quit', or 'bye' to end the conversation.")
+    
+    # Main conversation loop
+    while is_conversation_active and not done.is_set():
+        try:
+            # Wait for the agent's first response or previous response to complete
+            while not agent_response and not done.is_set():
+                await asyncio.sleep(0.1)
+            
+            # Get user input
+            user_input = input("User: ").strip()
+            
+            # Check if user wants to exit
+            if user_input.lower() in ["exit", "quit", "bye"]:
+                print("Goodbye!")
+                is_conversation_active = False
+                done.set()
+                break
+                
+            # Reset the agent response for the next turn
+            agent_response = ""
+            
+            # Send the user message to the agent
+            await session.send_text_message(user_input)
+            
+        except KeyboardInterrupt:
+            print("\nGoodbye!")
+            is_conversation_active = False
+            done.set()
+            break
+        except Exception as e:
+            logging.exception("Error in conversation loop", exc_info=e)
+            print(f"Error: {e}")
+            done.set()
+            break
+    
     await done.wait()
     await session.stop()
 
-    print(f"Final inference: {final_inference}")
+    print("Session ended.")
 
 
 if __name__ == "__main__":

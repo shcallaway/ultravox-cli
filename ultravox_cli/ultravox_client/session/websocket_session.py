@@ -222,3 +222,24 @@ class WebsocketSession(pyee.asyncio.AsyncIOEventEmitter):
             task.cancel()
 
         await self._async_close(*tasks)
+
+    async def send_text_message(self, text: str) -> None:
+        """
+        Send a text message from the user to the agent.
+
+        This method follows the inputTextMessage schema from the UltraVox documentation
+        to send a user's text input to the agent during an ongoing conversation.
+
+        Args:
+            text: The user's text message
+        """
+        if not self._socket:
+            raise RuntimeError("Socket not connected. Call start() first.")
+
+        message = {
+            "type": "input_text_message",
+            "text": text
+        }
+
+        logging.info(f"Sending user message: {text}")
+        await self._socket.send(json.dumps(message))
