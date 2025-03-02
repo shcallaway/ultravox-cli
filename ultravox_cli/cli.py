@@ -51,13 +51,16 @@ async def create_call(client: UltravoxClient, args: argparse.Namespace) -> str:
             }
         )
 
-    initial_messages = [
-        {
-            "role": "MESSAGE_ROLE_AGENT",
-            "text": "Hi, welcome to Dr. Donut. How can I help you today?",
-        },
-        {"role": "MESSAGE_ROLE_USER", "text": "I absolutely hate donuts!!!"},
-    ]
+    initial_messages: List[Dict[str, Any]] = []
+
+    # Uncomment this to use a pre-defined initial message
+    # initial_messages = [
+    #     {
+    #         "role": "MESSAGE_ROLE_AGENT",
+    #         "text": "Hi, welcome to Dr. Donut. How can I help you today?",
+    #     },
+    #     {"role": "MESSAGE_ROLE_USER", "text": "I absolutely hate donuts!!!"},
+    # ]
 
     medium = {
         "serverWebSocket": {
@@ -273,8 +276,6 @@ order.
 4. Ask the user to pull up to the drive thru window.
 If the user asks for something that's not on the menu, inform them of that fact, and
 suggest the most similar item on the menu.
-If the user says something unrelated to your role, respond with "Um... this is a Dr.
-Donut."
 If the user says "thank you", respond with "My pleasure."
 If the user asks about what's on the menu, DO NOT read the entire menu to them. Instead,
 give a couple suggestions.

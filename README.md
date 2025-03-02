@@ -35,10 +35,16 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-4. Run the CLI:
+4. Install the package:
 
 ```bash
-python cli.py
+pip install -e .
+```
+
+5. Run the CLI:
+
+```bash
+python ultravox_cli/cli.py
 ```
 
 You can cleanup/reset your virtual environment by running:
