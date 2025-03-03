@@ -71,12 +71,6 @@ parser.add_argument(
     help="Temperature to use when creating the call",
 )
 parser.add_argument(
-    "--secret-menu",
-    action="store_true",
-    help="Add a secret menu to the system prompt. This is a fun easter egg for the "
-    "Dr. Donut drive-thru experience.",
-)
-parser.add_argument(
     "--experimental-messages",
     action="store_true",
     help="Use experimental messages API instead of the default. This is an "
@@ -107,8 +101,16 @@ parser.add_argument(
 args = None
 
 
+# This is an example tool implementation to demonstrate how to create and use tools with Ultravox
+# It shows a pattern for implementing a simple tool that returns structured data
+# In a real application, you would implement your own tools that provide actual functionality
 async def get_secret_menu(parameters: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Handler for the getSecretMenu tool."""
+    """Handler for the getSecretMenu tool.
+
+    This is an example tool that demonstrates how to implement a tool that returns structured data.
+    The tool returns a mock "secret menu" with items and prices.
+    In a real application, you might fetch this data from a database or API.
+    """
     return [
         {
             "date": datetime.date.today().isoformat(),
@@ -131,21 +133,25 @@ async def create_call(client: UltravoxClient, args: argparse.Namespace) -> str:
     system_prompt = args.system_prompt
     selected_tools: List[Dict[str, Any]] = []
 
-    if args.secret_menu:
-        system_prompt += (
-            "\n\nThere is also a secret menu that changes daily. "
-            "If the user asks about it, use the getSecretMenu tool "
-            "to look up today's secret menu items."
-        )
-        selected_tools.append(
-            {
-                "temporaryTool": {
-                    "modelToolName": "getSecretMenu",
-                    "description": "Looks up today's secret menu items.",
-                    "client": {},
-                },
-            }
-        )
+    # EXAMPLE: Adding a tool to the selected tools list
+    # This demonstrates how to:
+    # 1. Add instructions about a tool to the system prompt
+    # 2. Configure a tool to be used by the model during the call
+    # In a real application, you would customize this based on your specific tools
+    system_prompt += (
+        "\n\nThere is also a secret menu that changes daily. "
+        "If the user asks about it, use the getSecretMenu tool "
+        "to look up today's secret menu items."
+    )
+    selected_tools.append(
+        {
+            "temporaryTool": {
+                "modelToolName": "getSecretMenu",
+                "description": "Looks up today's secret menu items.",
+                "client": {},
+            },
+        }
+    )
 
     initial_messages: List[Dict[str, Any]] = []
 
@@ -377,9 +383,11 @@ async def main() -> None:
     # Join the call
     session = await client.join_call(join_url)
 
-    # Register the secret menu tool if needed
-    if args.secret_menu:
-        session.register_tool("getSecretMenu", get_secret_menu)
+    # EXAMPLE: Registering a tool with the session
+    # This connects the tool implementation (get_secret_menu function)
+    # with the tool name that the model will use ("getSecretMenu")
+    # In a real application, you would register your own tool implementations
+    session.register_tool("getSecretMenu", get_secret_menu)
 
     done = asyncio.Event()
 

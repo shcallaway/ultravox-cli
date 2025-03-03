@@ -677,7 +677,7 @@ async def test_api_error_in_create_call() -> None:
 @pytest.mark.asyncio
 async def test_keyboard_interrupt_in_conversation_loop() -> None:
     """Test that the application handles keyboard interrupts in the
-conversation loop."""
+    conversation loop."""
     # Create mock objects
     mock_session = MagicMock()
     mock_session.send_text_message = AsyncMock()
