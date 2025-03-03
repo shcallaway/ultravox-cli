@@ -6,7 +6,7 @@ import logging
 import os
 import signal
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from ultravox_cli.ultravox_client.client import UltravoxClient
 
@@ -110,44 +110,14 @@ def _add_query_param(url: str, key: str, value: str) -> str:
     return urllib.parse.urlunparse(url_parts)
 
 
-async def main() -> None:
-    # Initialize the client
-    api_key = os.getenv("ULTRAVOX_API_KEY")
-    if not api_key:
-        raise ValueError("ULTRAVOX_API_KEY environment variable is not set")
-    client = UltravoxClient(api_key=api_key)
+def create_output_handler(
+    final_inference_ref: List[Optional[str]],
+    agent_response_ref: List[str],
+    current_final_response_ref: List[str],
+    agent_response_complete: asyncio.Event
+) -> Any:
+    """Create an output handler function for session events."""
 
-    # Create the call and get join URL
-    join_url = await create_call(client, args)
-
-    # Join the call
-    session = await client.join_call(join_url)
-
-    # Register the secret menu tool if needed
-    if args.secret_menu:
-        session.register_tool("getSecretMenu", get_secret_menu)
-
-    done = asyncio.Event()
-    loop = asyncio.get_running_loop()
-
-    # State variables for conversation tracking
-    final_inference: Optional[str] = None
-    agent_response: str = ""
-    is_conversation_active: bool = True
-
-    # State variables for output management
-    current_final_response = ""  # Accumulates the final response text
-    agent_response_complete = asyncio.Event()  # Signals when a response is complete
-
-    @session.on("state")  # type: ignore
-    async def on_state(state: str) -> None:
-        """Handle state changes in the conversation."""
-        if state == "listening":
-            print("User: ", end="", flush=True)
-        elif state == "thinking":
-            print("Agent thinking...", end="", flush=True)
-
-    @session.on("output")  # type: ignore
     async def on_output(text: str, final: bool) -> None:
         """Handle output from the agent.
 
@@ -155,20 +125,19 @@ async def main() -> None:
             text: The text output from the agent
             final: Whether this is a final response or not
         """
-        nonlocal final_inference, agent_response, current_final_response
-
         # Skip non-final responses (streaming updates)
         if not final:
             return
 
         # Process final responses
-        if text.strip() and text.strip() not in current_final_response:
+        if text.strip() and text.strip() not in current_final_response_ref[0]:
             # Clear the "thinking" status
             print("\r" + " " * 20 + "\r", end="", flush=True)
 
             # Print the actual response
             print(f"Agent: {text.strip()}")
-            current_final_response += text.strip() + " "  # Add a space between chunks
+            # Add a space between chunks
+            current_final_response_ref[0] += text.strip() + " "
 
             # Determine if this is the end of a complete response
             text_chunk = text.strip()
@@ -182,30 +151,76 @@ async def main() -> None:
 
             if is_complete:
                 # Mark the response as complete
-                final_inference = current_final_response.strip()
-                agent_response = current_final_response.strip()
+                final_inference_ref[0] = current_final_response_ref[0].strip()
+                agent_response_ref[0] = current_final_response_ref[0].strip()
                 print()  # Add spacing between turns
                 agent_response_complete.set()
 
-    @session.on("ended")  # type: ignore
+    return on_output
+
+
+async def setup_session_handlers(
+    session: Any, done: asyncio.Event
+) -> Tuple[List[str], asyncio.Event]:
+    """Set up event handlers for the session."""
+    loop = asyncio.get_running_loop()
+
+    # State variables for conversation tracking - using lists as mutable references
+    final_inference_ref = [None]  # type: List[Optional[str]]
+    agent_response_ref = [""]     # type: List[str]
+    current_final_response_ref = [""]  # type: List[str]
+
+    # Event for signaling when a response is complete
+    agent_response_complete = asyncio.Event()
+
+    @session.on("state")
+    async def on_state(state: str) -> None:
+        """Handle state changes in the conversation."""
+        if state == "listening":
+            print("User: ", end="", flush=True)
+        elif state == "thinking":
+            print("Agent thinking...", end="", flush=True)
+
+    # Create and register the output handler
+    output_handler = create_output_handler(
+        final_inference_ref,
+        agent_response_ref,
+        current_final_response_ref,
+        agent_response_complete
+    )
+    session.on("output")(output_handler)
+
+    @session.on("ended")
     async def on_ended() -> None:
         """Handle session end event."""
         print("Session ended")
         done.set()
 
-    @session.on("error")  # type: ignore
+    @session.on("error")
     async def on_error(error: Exception) -> None:
         """Handle session error event."""
         print(f"Error: {error}")
         done.set()
 
+    # Set up signal handlers
     loop.add_signal_handler(signal.SIGINT, lambda: done.set())
     loop.add_signal_handler(signal.SIGTERM, lambda: done.set())
 
-    await session.start()
+    return agent_response_ref, agent_response_complete
+
+
+async def run_conversation_loop(
+    session: Any,
+    done: asyncio.Event,
+    agent_response_ref: List[str],
+    agent_response_complete: asyncio.Event
+) -> None:
+    """Run the main conversation loop."""
+    is_conversation_active = True
 
     print(
-        "Welcome to UltraVox CLI! Type 'exit', 'quit', or 'bye' to end the conversation."
+        "Welcome to UltraVox CLI! "
+        "Type 'exit', 'quit', or 'bye' to end the conversation."
     )
 
     # Main conversation loop
@@ -213,7 +228,7 @@ async def main() -> None:
         while is_conversation_active and not done.is_set():
             try:
                 # Wait for the agent's first response or previous response to complete
-                while not agent_response and not done.is_set():
+                while not agent_response_ref[0] and not done.is_set():
                     await asyncio.sleep(0.1)
 
                 # Get user input
@@ -227,8 +242,7 @@ async def main() -> None:
                     break
 
                 # Reset the agent response for the next turn
-                agent_response = ""
-                current_final_response = ""
+                agent_response_ref[0] = ""
                 agent_response_complete.clear()
 
                 # Send the user message to the agent
@@ -249,6 +263,41 @@ async def main() -> None:
         await done.wait()
         await session.stop()
         print("Session ended.")
+
+
+async def main() -> None:
+    # Initialize the client
+    api_key = os.getenv("ULTRAVOX_API_KEY")
+    if not api_key:
+        raise ValueError("ULTRAVOX_API_KEY environment variable is not set")
+    client = UltravoxClient(api_key=api_key)
+
+    # Create the call and get join URL
+    join_url = await create_call(client, args)
+
+    # Join the call
+    session = await client.join_call(join_url)
+
+    # Register the secret menu tool if needed
+    if args.secret_menu:
+        session.register_tool("getSecretMenu", get_secret_menu)
+
+    done = asyncio.Event()
+
+    # Set up session handlers
+    agent_response_ref, agent_response_complete = await setup_session_handlers(
+        session, done
+    )
+
+    await session.start()
+
+    # Run the conversation loop
+    await run_conversation_loop(
+        session,
+        done,
+        agent_response_ref,
+        agent_response_complete
+    )
 
 
 if __name__ == "__main__":
