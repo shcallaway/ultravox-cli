@@ -1,5 +1,47 @@
 """
-Tool registry for managing client-side tools.
+Tool registry for managing client-side tools in Ultravox applications.
+
+This module provides the ToolRegistry class, which manages the registration,
+validation, and execution of client-side tools that can be invoked by the
+Ultravox agent during a conversation.
+
+Tools are defined with a name, handler function, description, and optional
+parameter schema. When registered, tools can be executed by the agent during
+a conversation to perform client-side operations.
+
+Example:
+    ```python
+    from ultravox_cli.ultravox_client.tool_registry import ToolRegistry
+
+    # Create a tool registry
+    registry = ToolRegistry()
+
+    # Define a tool handler
+    async def get_weather(parameters):
+        location = parameters.get("location", "New York")
+        return {"temperature": 72, "condition": "sunny", "location": location}
+
+    # Register the tool
+    registry.register(
+        name="getWeather",
+        handler=get_weather,
+        description="Get the current weather for a location",
+        parameters={
+            "type": "object",
+            "properties": {
+                "location": {
+                    "type": "string",
+                    "description": "The location to get weather for"
+                }
+            }
+        }
+    )
+
+    # Later, execute the tool
+    async def example():
+        result = await registry.execute_tool("getWeather", {"location": "San Francisco"})
+        print(result)  # {"temperature": 72, "condition": "sunny", "location": "San Francisco"}
+    ```
 """
 
 import inspect

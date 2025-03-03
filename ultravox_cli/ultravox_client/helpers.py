@@ -1,5 +1,29 @@
 """
-Helper utilities for the Ultravox client.
+Helper utilities for the Ultravox client library.
+
+This module provides various utility functions used throughout the Ultravox client
+library. These include:
+
+- URL and query parameter formatting
+- Logging configuration
+- Validation utilities
+
+These utilities are primarily used internally by the Ultravox client, but may also
+be useful for applications that build on top of the client library.
+
+Example:
+    ```python
+    from ultravox_cli.ultravox_client.helpers import format_query_params, setup_logger
+
+    # Format query parameters for a URL
+    params = {"limit": 10, "filter": "active", "include": ["user", "profile"]}
+    query_string = format_query_params(params)
+    # Returns "?limit=10&filter=active&include=[\"user\",\"profile\"]"
+
+    # Set up a logger
+    logger = setup_logger("my_app", logging.DEBUG)
+    logger.debug("Debugging information")
+    ```
 """
 
 import json

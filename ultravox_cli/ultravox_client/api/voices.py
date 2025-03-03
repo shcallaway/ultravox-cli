@@ -1,3 +1,42 @@
+"""
+API client for Ultravox Voices service.
+
+This module provides the VoicesAPI class for interacting with the Voices endpoints
+of the Ultravox API. It enables listing, retrieving, creating, and deleting voice
+profiles that can be used for text-to-speech in calls.
+
+The Voices API allows you to:
+- List available voices
+- Get details about specific voices
+- Create custom voice clones from audio samples
+- Delete custom voices
+
+Example:
+    ```python
+    from ultravox_cli.ultravox_client import UltravoxClient
+
+    async def example():
+        client = UltravoxClient(api_key="your_api_key")
+
+        # List available voices
+        voices = await client.voices.list()
+        print(f"Available voices: {[v['name'] for v in voices['voices']]}")
+
+        # Create a new voice clone
+        new_voice = await client.voices.create_clone(
+            name="My Custom Voice",
+            description="A custom voice for my application",
+            audio_url="https://example.com/my_audio_sample.mp3"
+        )
+        print(f"Created voice with ID: {new_voice['id']}")
+
+        # Get details about a specific voice
+        voice_id = new_voice["id"]
+        voice_details = await client.voices.get(voice_id)
+        print(f"Voice details: {voice_details}")
+    ```
+"""
+
 from typing import Any, Dict, Optional, TypeVar, cast
 
 T = TypeVar("T", bound="VoicesAPI")

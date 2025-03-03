@@ -1,3 +1,50 @@
+"""
+API client for Ultravox Tools service.
+
+This module provides the ToolsAPI class for interacting with the Tools endpoints
+of the Ultravox API. It enables creating, retrieving, updating, and deleting
+server-side tools that can be used by the Ultravox agent during calls.
+
+The Tools API allows you to:
+- Create new server-side tools with schemas and function URLs
+- Retrieve information about existing tools
+- Update tool configurations
+- Delete tools
+
+Note that these are server-side tools registered with the Ultravox service,
+which is different from client-side tools registered with a WebsocketSession.
+
+Example:
+    ```python
+    from ultravox_cli.ultravox_client import UltravoxClient
+
+    async def example():
+        client = UltravoxClient(api_key="your_api_key")
+
+        # Create a new server-side tool
+        tool = await client.tools.create(
+            name="getWeather",
+            description="Get weather information for a location",
+            schema={
+                "type": "object",
+                "properties": {
+                    "location": {
+                        "type": "string",
+                        "description": "The location to get weather for"
+                    }
+                },
+                "required": ["location"]
+            },
+            function_url="https://api.example.com/weather"
+        )
+        print(f"Tool created with ID: {tool['id']}")
+
+        # List all tools
+        tools = await client.tools.list()
+        print(f"You have {len(tools['tools'])} tools")
+    ```
+"""
+
 from typing import Any, Dict, Optional, TypeVar, cast
 
 T = TypeVar("T", bound="ToolsAPI")

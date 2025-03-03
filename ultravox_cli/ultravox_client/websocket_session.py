@@ -1,3 +1,46 @@
+"""
+WebSocket-based session management for Ultravox voice calls.
+
+This module provides the WebsocketSession class, which handles real-time
+communication with the Ultravox service via WebSockets. It manages the connection
+lifecycle, processes incoming events, and handles client-side tool invocations.
+
+The session is event-driven and emits various events that clients can listen for:
+- 'state': When the call state changes (idle, listening, thinking, speaking)
+- 'output': When the agent produces output
+- 'error': When an error occurs
+- 'ended': When the session ends
+
+Example:
+    ```python
+    from ultravox_cli.ultravox_client.websocket_session import WebsocketSession
+
+    # Create a session from a join URL
+    session = WebsocketSession("wss://api.ultravox.ai/api/calls/join/...")
+
+    # Register event handlers
+    @session.on("state")
+    async def on_state(state):
+        print(f"State changed: {state}")
+
+    @session.on("output")
+    async def on_output(text, final):
+        print(f"Agent: {text}")
+
+    # Register a tool
+    session.register_tool("getWeather", get_weather_handler)
+
+    # Start the session
+    await session.start()
+
+    # Send a message
+    await session.send_text_message("Hello!")
+
+    # Stop the session when done
+    await session.stop()
+    ```
+"""
+
 import asyncio
 import json
 import logging
@@ -138,10 +181,34 @@ class WebsocketSession(pyee.asyncio.AsyncIOEventEmitter):
         """
         Handle a client tool invocation.
 
+        This method is called when the agent invokes a client-side tool. It looks up the
+        registered handler for the specified tool, calls it with the provided parameters,
+        and sends the result back to the server.
+
         Args:
             tool_name: The name of the tool to invoke
-            invocation_id: The invocation ID
-            parameters: The tool parameters
+            invocation_id: The unique ID for this tool invocation, used to match the response
+            parameters: The parameters to pass to the tool handler
+
+        Note:
+            If no handler is registered for the tool, an error response is sent.
+            If the handler raises an exception, the error information is captured and sent.
+
+        Example of a tool invocation response:
+            {
+                "type": "client_tool_result",
+                "invocationId": "123",
+                "result": "{\"data\": \"example result\"}"
+            }
+
+            or in case of error:
+
+            {
+                "type": "client_tool_result",
+                "invocationId": "123",
+                "errorType": "ValueError",
+                "errorMessage": "Invalid parameter"
+            }
         """
         logging.debug(f"Client tool call: {tool_name}")
 
@@ -179,8 +246,23 @@ class WebsocketSession(pyee.asyncio.AsyncIOEventEmitter):
         """
         Close multiple awaitables, handling exceptions.
 
+        This utility method safely awaits multiple coroutines, catching and handling
+        any exceptions that may occur. It's used for graceful shutdown of multiple
+        tasks or connections.
+
         Args:
-            *awaitables_or_none: Awaitables to close
+            *awaitables_or_none: Awaitable objects to close. Can include None values,
+                                which will be ignored.
+
+        Note:
+            This method uses asyncio.shield to prevent cancellation of the gather
+            operation itself. If multiple exceptions occur, they are combined into
+            a single error message rather than using ExceptionGroup.
+
+        Implementation Details:
+            - None values are filtered out
+            - Cancelled exceptions are ignored
+            - Other exceptions are logged with a warning
         """
         coros = [coro for coro in awaitables_or_none if coro is not None]
         if not coros:
@@ -214,8 +296,18 @@ class WebsocketSession(pyee.asyncio.AsyncIOEventEmitter):
         """
         Cancel multiple tasks, handling exceptions.
 
+        This utility method safely cancels multiple asyncio tasks and waits for them
+        to complete or raise exceptions. It's used during cleanup to ensure all
+        background tasks are properly terminated.
+
         Args:
-            *tasks_or_none: Tasks to cancel
+            *tasks_or_none: Task objects to cancel. Can include None values,
+                           which will be ignored.
+
+        Note:
+            This method first cancels all provided tasks, then uses _async_close to
+            wait for them to complete or raise exceptions. Any resulting exceptions
+            are handled by _async_close.
         """
         tasks = [task for task in tasks_or_none if task is not None]
         for task in tasks:

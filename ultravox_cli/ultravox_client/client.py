@@ -1,3 +1,31 @@
+"""
+Main client library for interacting with the Ultravox API.
+
+This module provides the UltravoxClient class, which serves as the main entry point
+for interacting with all Ultravox API services. It handles authentication, API requests,
+and provides access to all API endpoints through specialized API client classes.
+
+Example:
+    ```python
+    from ultravox_cli.ultravox_client.client import UltravoxClient
+
+    # Initialize the client with your API key
+    client = UltravoxClient(api_key="your_api_key")
+
+    # Use the API client to interact with various services
+    async def example():
+        # Create a call
+        call = await client.calls.create(
+            system_prompt="You are a helpful assistant.",
+            voice="default"
+        )
+
+        # Join the call
+        session = await client.join_call(call["joinUrl"])
+        await session.start()
+    ```
+"""
+
 import logging
 from typing import Any, Dict, Optional
 

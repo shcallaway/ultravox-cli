@@ -1,3 +1,36 @@
+"""
+API client for Ultravox Calls service.
+
+This module provides the CallsAPI class for interacting with the Calls endpoints
+of the Ultravox API. It enables creating, retrieving, and managing voice calls.
+
+The Calls API allows you to:
+- Create new calls with various configuration options
+- Retrieve information about existing calls
+- Get messages, tools, and recordings from calls
+
+Example:
+    ```python
+    from ultravox_cli.ultravox_client import UltravoxClient
+
+    async def example():
+        client = UltravoxClient(api_key="your_api_key")
+
+        # Create a new call
+        call = await client.calls.create(
+            system_prompt="You are a helpful assistant.",
+            temperature=0.7,
+            voice="default"
+        )
+        print(f"Call created with join URL: {call['joinUrl']}")
+
+        # Get messages from a call
+        call_id = call["id"]
+        messages = await client.calls.get_messages(call_id)
+        print(f"Call has {len(messages['messages'])} messages")
+    ```
+"""
+
 from typing import Any, Dict, List, Optional
 import urllib.parse
 
