@@ -12,16 +12,8 @@ from unittest.mock import MagicMock
 
 from ultravox_cli.ultravox_client.client import UltravoxClient
 
-default_system_prompt = f"""
-You are a drive-thru order taker for a donut shop called "Dr. Donut". Local time is
-currently: ${datetime.datetime.now().isoformat()}
-
-The user is talking to you over voice on their phone, and your response will be read out
-loud with realistic text-to-speech (TTS) technology.
-"""
-
 # Create the argument parser at module level
-parser = argparse.ArgumentParser(prog="websocket_client.py")
+parser = argparse.ArgumentParser(prog="cli.py")
 
 parser.add_argument(
     "--verbose", "-v", action="store_true", help="Show verbose session information"
@@ -32,7 +24,11 @@ parser.add_argument("--voice", "-V", type=str, help="Name (or id) of voice to us
 parser.add_argument(
     "--system-prompt",
     help="System prompt to use for the call",
-    default=default_system_prompt,
+    default=f"""
+You are a friendly assistant. Local time is currently: ${datetime.datetime.now().isoformat()}
+The user is talking to you over voice on their phone, and your response will be read out
+loud with realistic text-to-speech (TTS) technology.
+""",
 )
 
 parser.add_argument(
@@ -81,16 +77,9 @@ async def get_secret_menu(parameters: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 async def create_call(client: UltravoxClient, args: argparse.Namespace) -> str:
     """Creates a new call and returns its join URL."""
-    system_prompt = args.system_prompt
     selected_tools: List[Dict[str, Any]] = []
 
     # Uncomment to use an example tool
-    # system_prompt += (
-    #     "\n\nThere is also a secret menu that changes daily. "
-    #     "If the user asks about it, use the getSecretMenu tool "
-    #     "to look up today's secret menu items."
-    # )
-
     # selected_tools.append(
     #     {
     #         "temporaryTool": {
@@ -113,15 +102,6 @@ async def create_call(client: UltravoxClient, args: argparse.Namespace) -> str:
             logging.error(f"Failed to parse initial_messages_json: {e}")
             raise ValueError(f"Invalid JSON format in initial_messages_json: {e}")
 
-    # Uncomment this to use a pre-defined initial message
-    # initial_messages = [
-    #     {
-    #         "role": "MESSAGE_ROLE_AGENT",
-    #         "text": "Hi, welcome to Dr. Donut. How can I help you today?",
-    #     },
-    #     {"role": "MESSAGE_ROLE_USER", "text": "I absolutely hate donuts!!!"},
-    # ]
-
     medium = {
         "serverWebSocket": {
             "inputSampleRate": 48000,
@@ -132,7 +112,7 @@ async def create_call(client: UltravoxClient, args: argparse.Namespace) -> str:
 
     try:
         response: Dict[str, Any] = await client.calls.create(
-            system_prompt=system_prompt,
+            system_prompt=args.system_prompt,
             temperature=args.temperature,
             voice=args.voice if args.voice else None,
             selected_tools=selected_tools,
@@ -190,6 +170,7 @@ def create_output_handler(
 
             # Print the actual response
             print(f"Agent: {text.strip()}")
+
             # Add a space between chunks
             current_final_response_ref[0] += text.strip() + " "
 
@@ -207,7 +188,6 @@ def create_output_handler(
                 # Mark the response as complete
                 final_inference_ref[0] = current_final_response_ref[0].strip()
                 agent_response_ref[0] = current_final_response_ref[0].strip()
-                print()  # Add spacing between turns
                 agent_response_complete.set()
 
     return on_output
@@ -247,7 +227,7 @@ async def setup_session_handlers(
     @session.on("ended")
     async def on_ended() -> None:
         """Handle session end event."""
-        print("Session ended")
+        print("Session ended.")
         done.set()
 
     @session.on("error")
@@ -316,7 +296,6 @@ async def run_conversation_loop(
         # Ensure proper cleanup
         await done.wait()
         await session.stop()
-        print("Session ended.")
 
 
 async def main() -> None:
