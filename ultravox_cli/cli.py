@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import argparse
 import asyncio
 import datetime
+import json
 import logging
 import os
 import signal
@@ -41,34 +42,9 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--experimental-messages",
-    action="store_true",
-    help="Use experimental messages API instead of the default. This is an "
-    "experimental feature and may not work as expected.",
-)
-
-parser.add_argument(
-    "--prior-call-id",
+    "--initial-messages-json",
     type=str,
-    help="Allows setting priorCallId during start call",
-)
-
-parser.add_argument(
-    "--user-speaks-first",
-    action="store_true",
-    help="If set, sets FIRST_SPEAKER_USER",
-)
-
-parser.add_argument(
-    "--initial-output-text",
-    action="store_true",
-    help="Sets the initial_output_medium to text",
-)
-
-parser.add_argument(
-    "--api-version",
-    type=int,
-    help="API version to set when creating the call.",
+    help="JSON string containing a list of initial messages to be provided to the call",
 )
 
 # Initialize args with default value for testing purposes
@@ -126,6 +102,16 @@ async def create_call(client: UltravoxClient, args: argparse.Namespace) -> str:
 
     initial_messages: List[Dict[str, Any]] = []
 
+    # Process initial_messages_json if provided
+    if args.initial_messages_json:
+        try:
+            initial_messages = json.loads(args.initial_messages_json)
+            if not isinstance(initial_messages, list):
+                raise ValueError("initial_messages_json must be a JSON list")
+        except json.JSONDecodeError as e:
+            logging.error(f"Failed to parse initial_messages_json: {e}")
+            raise ValueError(f"Invalid JSON format in initial_messages_json: {e}")
+
     # Uncomment this to use a pre-defined initial message
     # initial_messages = [
     #     {
@@ -157,15 +143,6 @@ async def create_call(client: UltravoxClient, args: argparse.Namespace) -> str:
         if not response or "joinUrl" not in response:
             raise ValueError("Invalid response from API: missing joinUrl")
         join_url: str = response["joinUrl"]
-
-        # Add query parameters
-        if args.api_version:
-            join_url = _add_query_param(join_url, "apiVersion", str(args.api_version))
-        
-        if args.experimental_messages:
-            join_url = _add_query_param(
-                join_url, "experimentalMessages", args.experimental_messages
-            )
 
         return join_url
     except Exception as e:

@@ -86,6 +86,22 @@ The multi-turn conversation feature is implemented using UltraVox's `inputTextMe
 
 Behind the scenes, the CLI maintains the WebSocket connection with the UltraVox agent throughout the entire conversation, enabling a seamless dialog experience.
 
+## CLI Options
+
+The CLI supports the following command-line options:
+
+- `--verbose` or `-v`: Show verbose session information
+- `--voice` or `-V`: Specify the name or ID of the voice to use
+- `--system-prompt`: Custom system prompt to use for the call (defaults to a basic Dr. Donut prompt)
+- `--temperature`: Temperature to use when creating the call (defaults to 0.8)
+- `--initial-messages-json`: JSON string containing a list of initial messages to be provided to the call
+
+Example usage with options:
+
+```bash
+python ultravox_cli/cli.py --voice claude --temperature 0.7 --initial-messages-json '[{"role":"MESSAGE_ROLE_AGENT","text":"Welcome to our service!"},{"role":"MESSAGE_ROLE_USER","text":"Tell me about your offerings"}]'
+```
+
 ## Usage
 
 Once the CLI is running, you can interact with the Ultravox agent in a multi-turn conversation:
@@ -120,50 +136,4 @@ Exit commands:
 
 ## Development
 
-To run the tests:
-
-```bash
-python -m pytest
-```
-
-To run the linter:
-
-```bash
-python -m flake8
-```
-
-To run the type checker:
-
-```bash
-python -m mypy .
-```
-
-To format the code:
-
-```bash
-python -m black .
-```
-
-## Troubleshooting
-
-- **API Connection Issues**: Verify your internet connection and API credentials
-- **Microphone Not Working**: Check your system's audio input settings
-- **Python Version Errors**: Ensure you're using Python 3.10 or later
-
-### Community
-
-- Report issues on [GitHub Issues](https://github.com/yourusername/ultravox-cli/issues)
-- Contribute to discussions in the [Discussions tab](https://github.com/yourusername/ultravox-cli/discussions)
-- Share your use-cases with the community
-- Contact maintainers through GitHub or the Ultravox community channels
-
-## License
-
-This project is licensed under the GNU General Public License v3.0 (GPLv3). This means:
-
-- You can use this software for any purpose
-- You can modify and distribute this software
-- If you distribute modified versions, they must also be under GPLv3
-- All changes must be documented and source code must be available
-
-See the [LICENSE](LICENSE) file for the complete license text.
+// ... existing code ...

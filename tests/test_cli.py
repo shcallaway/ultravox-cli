@@ -2,6 +2,7 @@ import os
 import sys
 import asyncio
 import argparse
+import json
 import unittest
 from unittest.mock import MagicMock, AsyncMock, patch
 import pytest
@@ -84,6 +85,7 @@ async def test_create_call():
     mock_args.secret_menu = False
     mock_args.api_version = None
     mock_args.experimental_messages = False
+    mock_args.initial_messages_json = None
 
     # Call the function
     join_url = await create_call(mock_client, mock_args)
@@ -136,6 +138,45 @@ async def test_create_call_with_secret_menu():
         tool.get("temporaryTool", {}).get("modelToolName") == "getSecretMenu"
         for tool in call_kwargs["selected_tools"]
     )
+
+
+@pytest.mark.asyncio
+async def test_create_call_with_initial_messages_json():
+    """Test the create_call function with initial_messages_json."""
+    # Create mock client
+    mock_client = MagicMock()
+    mock_client.calls = MagicMock()
+    mock_client.calls.create = AsyncMock(
+        return_value={"joinUrl": "https://example.com/test"}
+    )
+
+    # Create mock args
+    mock_args = MagicMock()
+    mock_args.system_prompt = "Test system prompt"
+    mock_args.temperature = 0.8
+    mock_args.voice = None
+    mock_args.secret_menu = False
+    mock_args.api_version = None
+    mock_args.experimental_messages = False
+    
+    # Set the initial_messages_json
+    initial_messages = [
+        {"role": "MESSAGE_ROLE_AGENT", "text": "Welcome to our service!"},
+        {"role": "MESSAGE_ROLE_USER", "text": "Tell me about your offerings"}
+    ]
+    mock_args.initial_messages_json = json.dumps(initial_messages)
+
+    # Call the function
+    join_url = await create_call(mock_client, mock_args)
+
+    # Verify the result
+    assert join_url == "https://example.com/test"
+
+    # Verify that client.calls.create was called with the correct initial_messages
+    mock_client.calls.create.assert_called_once()
+    call_args = mock_client.calls.create.call_args[1]
+    assert 'initial_messages' in call_args
+    assert call_args['initial_messages'] == initial_messages
 
 
 def test_create_output_handler():
@@ -321,6 +362,7 @@ class TestCLIArgumentParsing(unittest.TestCase):
             user_speaks_first=False,
             initial_output_text=False,
             api_version=None,
+            initial_messages_json=None,
         )
         mock_parse_args.return_value = mock_args
 
@@ -356,6 +398,7 @@ class TestCLIArgumentParsing(unittest.TestCase):
             user_speaks_first=False,
             initial_output_text=False,
             api_version=None,
+            initial_messages_json=None,
         )
         mock_parse_args.return_value = mock_args
 
@@ -386,6 +429,7 @@ class TestCLIArgumentParsing(unittest.TestCase):
             user_speaks_first=False,
             initial_output_text=False,
             api_version=None,
+            initial_messages_json=None,
         )
         mock_parse_args.return_value = mock_args
 
@@ -416,6 +460,7 @@ class TestCLIArgumentParsing(unittest.TestCase):
             user_speaks_first=False,
             initial_output_text=False,
             api_version=None,
+            initial_messages_json=None,
         )
         mock_parse_args.return_value = mock_args
 
@@ -446,6 +491,7 @@ class TestCLIArgumentParsing(unittest.TestCase):
             user_speaks_first=False,
             initial_output_text=False,
             api_version=None,
+            initial_messages_json=None,
         )
         mock_parse_args.return_value = mock_args
 
@@ -476,6 +522,7 @@ class TestCLIArgumentParsing(unittest.TestCase):
             user_speaks_first=False,
             initial_output_text=False,
             api_version=None,
+            initial_messages_json=None,
         )
         mock_parse_args.return_value = mock_args
 
@@ -506,6 +553,7 @@ class TestCLIArgumentParsing(unittest.TestCase):
             user_speaks_first=False,
             initial_output_text=False,
             api_version=None,
+            initial_messages_json=None,
         )
         mock_parse_args.return_value = mock_args
 
@@ -524,7 +572,7 @@ class TestCLIArgumentParsing(unittest.TestCase):
     @patch("argparse.ArgumentParser.parse_args")
     def test_api_version_argument(self, mock_parse_args: Any) -> None:
         """Test that the api_version argument is set correctly."""
-        # Create a mock args object with api_version set
+        # Create a mock args object with api_version set to v2
         mock_args = argparse.Namespace(
             verbose=False,
             voice=None,
@@ -536,6 +584,7 @@ class TestCLIArgumentParsing(unittest.TestCase):
             user_speaks_first=False,
             initial_output_text=False,
             api_version="v2",
+            initial_messages_json=None,
         )
         mock_parse_args.return_value = mock_args
 
@@ -553,7 +602,11 @@ class TestCLIArgumentParsing(unittest.TestCase):
 
     @patch("argparse.ArgumentParser.parse_args")
     def test_multiple_arguments(self, mock_parse_args: Any) -> None:
-        """Test setting multiple arguments at once."""
+        """Test that multiple arguments are set correctly."""
+        # Create initial messages for testing
+        initial_messages = [{"role":"MESSAGE_ROLE_AGENT","text":"Test message"}]
+        initial_messages_json = json.dumps(initial_messages)
+        
         # Create a mock args object with multiple arguments set
         mock_args = argparse.Namespace(
             verbose=True,
@@ -566,6 +619,7 @@ class TestCLIArgumentParsing(unittest.TestCase):
             user_speaks_first=True,
             initial_output_text=True,
             api_version="v2",
+            initial_messages_json=initial_messages_json,
         )
         mock_parse_args.return_value = mock_args
 
@@ -589,6 +643,53 @@ class TestCLIArgumentParsing(unittest.TestCase):
         self.assertTrue(args.user_speaks_first)
         self.assertTrue(args.initial_output_text)
         self.assertEqual(args.api_version, "v2")
+        self.assertEqual(args.initial_messages_json, initial_messages_json)
+        
+        # Verify that it parses to the expected JSON
+        parsed_messages = json.loads(args.initial_messages_json)
+        self.assertEqual(parsed_messages, initial_messages)
+
+    @patch("argparse.ArgumentParser.parse_args")
+    def test_initial_messages_json_argument(self, mock_parse_args: Any) -> None:
+        """Test that the initial_messages_json argument is set correctly."""
+        # Create initial messages
+        initial_messages = [
+            {"role": "MESSAGE_ROLE_AGENT", "text": "Welcome to our service!"},
+            {"role": "MESSAGE_ROLE_USER", "text": "Tell me about your offerings"}
+        ]
+        initial_messages_json = json.dumps(initial_messages)
+        
+        # Create a mock args object with initial_messages_json set
+        mock_args = argparse.Namespace(
+            verbose=False,
+            voice=None,
+            system_prompt="Test system prompt",
+            temperature=0.8,
+            secret_menu=False,
+            experimental_messages=False,
+            prior_call_id=None,
+            user_speaks_first=False,
+            initial_output_text=False,
+            api_version=None,
+            initial_messages_json=initial_messages_json,
+        )
+        mock_parse_args.return_value = mock_args
+
+        # Import the CLI module with our mocked arguments
+        import importlib
+        from ultravox_cli import cli
+
+        importlib.reload(cli)
+
+        # Access the mocked args through the mock
+        args = mock_parse_args.return_value
+
+        # Check the initial_messages_json argument
+        self.assertEqual(args.initial_messages_json, initial_messages_json)
+        
+        # Verify that it parses to the expected JSON
+        parsed_messages = json.loads(args.initial_messages_json)
+        self.assertEqual(parsed_messages, initial_messages)
 
 
 # Error Handling Tests (moved from test_error_handling.py)
@@ -936,3 +1037,59 @@ async def test_cli_integration():
     assert call_kwargs["system_prompt"] == "Test system prompt"
     assert "temperature" in call_kwargs
     assert call_kwargs["temperature"] == 0.8
+
+
+@pytest.mark.asyncio
+async def test_invalid_initial_messages_json_format():
+    """Test handling of invalid JSON format in initial_messages_json."""
+    # Create mock client
+    mock_client = MagicMock()
+    mock_client.calls = MagicMock()
+    mock_client.calls.create = AsyncMock(
+        return_value={"joinUrl": "https://example.com/test"}
+    )
+
+    # Create mock args with invalid JSON
+    mock_args = MagicMock()
+    mock_args.system_prompt = "Test system prompt"
+    mock_args.temperature = 0.8
+    mock_args.voice = None
+    mock_args.secret_menu = False
+    mock_args.api_version = None
+    mock_args.experimental_messages = False
+    mock_args.initial_messages_json = "{invalid json}"
+
+    # Call the function and expect a ValueError
+    with pytest.raises(ValueError) as excinfo:
+        await create_call(mock_client, mock_args)
+    
+    # Verify that the error message indicates an invalid JSON format
+    assert "Invalid JSON format" in str(excinfo.value)
+
+
+@pytest.mark.asyncio
+async def test_non_list_initial_messages_json():
+    """Test handling of non-list value in initial_messages_json."""
+    # Create mock client
+    mock_client = MagicMock()
+    mock_client.calls = MagicMock()
+    mock_client.calls.create = AsyncMock(
+        return_value={"joinUrl": "https://example.com/test"}
+    )
+
+    # Create mock args with JSON that's not a list
+    mock_args = MagicMock()
+    mock_args.system_prompt = "Test system prompt"
+    mock_args.temperature = 0.8
+    mock_args.voice = None
+    mock_args.secret_menu = False
+    mock_args.api_version = None
+    mock_args.experimental_messages = False
+    mock_args.initial_messages_json = '{"not": "a list"}'
+
+    # Call the function and expect a ValueError
+    with pytest.raises(ValueError) as excinfo:
+        await create_call(mock_client, mock_args)
+    
+    # Verify that the error message indicates the value must be a list
+    assert "must be a JSON list" in str(excinfo.value)
