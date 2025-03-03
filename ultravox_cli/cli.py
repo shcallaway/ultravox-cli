@@ -110,6 +110,7 @@ parser.add_argument(
 # Initialize args with default value for testing purposes
 args = None
 
+
 async def get_secret_menu(parameters: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Handler for the getSecretMenu tool."""
     return [
@@ -213,7 +214,7 @@ def create_output_handler(
     final_inference_ref: List[Optional[str]],
     agent_response_ref: List[str],
     current_final_response_ref: List[str],
-    agent_response_complete: asyncio.Event
+    agent_response_complete: asyncio.Event,
 ) -> Any:
     """Create an output handler function for session events."""
 
@@ -266,7 +267,7 @@ async def setup_session_handlers(
 
     # State variables for conversation tracking - using lists as mutable references
     final_inference_ref = [None]  # type: List[Optional[str]]
-    agent_response_ref = [""]     # type: List[str]
+    agent_response_ref = [""]  # type: List[str]
     current_final_response_ref = [""]  # type: List[str]
 
     # Event for signaling when a response is complete
@@ -285,7 +286,7 @@ async def setup_session_handlers(
         final_inference_ref,
         agent_response_ref,
         current_final_response_ref,
-        agent_response_complete
+        agent_response_complete,
     )
     session.on("output")(output_handler)
 
@@ -312,7 +313,7 @@ async def run_conversation_loop(
     session: Any,
     done: asyncio.Event,
     agent_response_ref: List[str],
-    agent_response_complete: asyncio.Event
+    agent_response_complete: asyncio.Event,
 ) -> None:
     """Run the main conversation loop."""
     is_conversation_active = True
@@ -367,7 +368,7 @@ async def run_conversation_loop(
 async def main() -> None:
     # Use the global args
     global args
-    
+
     # Initialize the client
     api_key = os.getenv("ULTRAVOX_API_KEY")
     if not api_key:
@@ -395,10 +396,7 @@ async def main() -> None:
 
     # Run the conversation loop
     await run_conversation_loop(
-        session,
-        done,
-        agent_response_ref,
-        agent_response_complete
+        session, done, agent_response_ref, agent_response_complete
     )
 
 
@@ -411,10 +409,10 @@ if __name__ == "__main__":
 
     # Parse the command line arguments
     args = parser.parse_args()
-    
+
     if args.very_verbose:
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
     elif args.verbose:
         logging.basicConfig(stream=sys.stdout, level=logging.INFO)
-    
+
     asyncio.run(main())

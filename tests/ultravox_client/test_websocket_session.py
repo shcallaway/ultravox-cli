@@ -16,7 +16,7 @@ import pytest
 from websockets import exceptions as ws_exceptions
 from websockets.frames import Close
 
-from ultravox_cli.ultravox_client.session.websocket_session import WebsocketSession
+from ultravox_cli.ultravox_client.websocket_session import WebsocketSession
 
 T = TypeVar("T")
 

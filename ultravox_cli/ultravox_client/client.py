@@ -6,7 +6,7 @@ import aiohttp
 from ultravox_cli.ultravox_client.api.calls import CallsAPI
 from ultravox_cli.ultravox_client.api.tools import ToolsAPI
 from ultravox_cli.ultravox_client.api.voices import VoicesAPI
-from ultravox_cli.ultravox_client.session.websocket_session import WebsocketSession
+from ultravox_cli.ultravox_client.websocket_session import WebsocketSession
 
 
 class UltravoxClient:

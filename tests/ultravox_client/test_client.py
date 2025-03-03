@@ -6,7 +6,7 @@ import pytest
 import aiohttp
 
 from ultravox_cli.ultravox_client.client import UltravoxClient
-from ultravox_cli.ultravox_client.session.websocket_session import WebsocketSession
+from ultravox_cli.ultravox_client.websocket_session import WebsocketSession
 
 
 class TestUltravoxClient(unittest.TestCase):
@@ -64,7 +64,7 @@ class TestUltravoxClient(unittest.TestCase):
         mock_request.assert_called_once()
         mock_response.raise_for_status.assert_called_once()
 
-    @patch("ultravox_cli.ultravox_client.session.websocket_session.ws_client.connect")
+    @patch("ultravox_cli.ultravox_client.websocket_session.ws_client.connect")
     def test_join_call(self, mock_connect: MagicMock) -> None:
         """Test the join_call method."""
         # Set up the mocks
