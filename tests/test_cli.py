@@ -5,11 +5,8 @@ import argparse
 import unittest
 from unittest.mock import MagicMock, AsyncMock, patch
 import pytest
-from typing import Any, Dict, List, Optional, Tuple
-
-# Add the project root directory to sys.path if needed
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
+from typing import Any, Dict, List
+from ultravox_cli.ultravox_client.client import UltravoxClient
 from ultravox_cli.cli import (
     _add_query_param,
     create_call,
@@ -20,7 +17,8 @@ from ultravox_cli.cli import (
     main,
 )
 
-from ultravox_cli.ultravox_client.client import UltravoxClient
+# Add the project root directory to sys.path if needed
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
 class TestCLIFunctions:
@@ -209,8 +207,6 @@ async def test_run_conversation_loop():
     mock_session.send_text_message = AsyncMock()
     mock_session.stop = AsyncMock()
 
-    mock_handlers = MagicMock()
-    mock_args = MagicMock()
     done_event = asyncio.Event()
 
     # Mock agent_response_ref and agent_response_complete
@@ -692,7 +688,8 @@ async def test_api_error_in_create_call() -> None:
 
 @pytest.mark.asyncio
 async def test_keyboard_interrupt_in_conversation_loop() -> None:
-    """Test that the application handles keyboard interrupts in the conversation loop."""
+    """Test that the application handles keyboard interrupts in the
+conversation loop."""
     # Create mock objects
     mock_session = MagicMock()
     mock_session.send_text_message = AsyncMock()

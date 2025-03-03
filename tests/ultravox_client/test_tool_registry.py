@@ -1,8 +1,6 @@
-import asyncio
-import inspect
 import logging
 import pytest
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import patch
 from typing import Dict, Any
 
 from ultravox_cli.ultravox_client.tool_registry import ToolRegistry

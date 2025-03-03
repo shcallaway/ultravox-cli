@@ -109,7 +109,7 @@ class TestSetupLogger:
             mock_get_logger.return_value = mock_logger
 
             # Call the function with custom log level
-            result = setup_logger("test_logger", level=logging.DEBUG)
+            setup_logger("test_logger", level=logging.DEBUG)
 
             # Verify the logger was configured with the custom level
             mock_logger.setLevel.assert_called_once_with(logging.DEBUG)
