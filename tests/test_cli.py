@@ -155,11 +155,11 @@ async def test_create_call_with_initial_messages_json():
     mock_args.secret_menu = False
     mock_args.api_version = None
     mock_args.experimental_messages = False
-    
+
     # Set the initial_messages_json
     initial_messages = [
         {"role": "MESSAGE_ROLE_AGENT", "text": "Welcome to our service!"},
-        {"role": "MESSAGE_ROLE_USER", "text": "Tell me about your offerings"}
+        {"role": "MESSAGE_ROLE_USER", "text": "Tell me about your offerings"},
     ]
     mock_args.initial_messages_json = json.dumps(initial_messages)
 
@@ -172,8 +172,8 @@ async def test_create_call_with_initial_messages_json():
     # Verify that client.calls.create was called with the correct initial_messages
     mock_client.calls.create.assert_called_once()
     call_args = mock_client.calls.create.call_args[1]
-    assert 'initial_messages' in call_args
-    assert call_args['initial_messages'] == initial_messages
+    assert "initial_messages" in call_args
+    assert call_args["initial_messages"] == initial_messages
 
 
 def test_create_output_handler():
@@ -601,9 +601,9 @@ class TestCLIArgumentParsing(unittest.TestCase):
     def test_multiple_arguments(self, mock_parse_args: Any) -> None:
         """Test that multiple arguments are set correctly."""
         # Create initial messages for testing
-        initial_messages = [{"role":"MESSAGE_ROLE_AGENT","text":"Test message"}]
+        initial_messages = [{"role": "MESSAGE_ROLE_AGENT", "text": "Test message"}]
         initial_messages_json = json.dumps(initial_messages)
-        
+
         # Create a mock args object with multiple arguments set
         mock_args = argparse.Namespace(
             verbose=True,
@@ -641,7 +641,7 @@ class TestCLIArgumentParsing(unittest.TestCase):
         self.assertTrue(args.initial_output_text)
         self.assertEqual(args.api_version, "v2")
         self.assertEqual(args.initial_messages_json, initial_messages_json)
-        
+
         # Verify that it parses to the expected JSON
         parsed_messages = json.loads(args.initial_messages_json)
         self.assertEqual(parsed_messages, initial_messages)
@@ -652,10 +652,10 @@ class TestCLIArgumentParsing(unittest.TestCase):
         # Create initial messages
         initial_messages = [
             {"role": "MESSAGE_ROLE_AGENT", "text": "Welcome to our service!"},
-            {"role": "MESSAGE_ROLE_USER", "text": "Tell me about your offerings"}
+            {"role": "MESSAGE_ROLE_USER", "text": "Tell me about your offerings"},
         ]
         initial_messages_json = json.dumps(initial_messages)
-        
+
         # Create a mock args object with initial_messages_json set
         mock_args = argparse.Namespace(
             verbose=False,
@@ -683,7 +683,7 @@ class TestCLIArgumentParsing(unittest.TestCase):
 
         # Check the initial_messages_json argument
         self.assertEqual(args.initial_messages_json, initial_messages_json)
-        
+
         # Verify that it parses to the expected JSON
         parsed_messages = json.loads(args.initial_messages_json)
         self.assertEqual(parsed_messages, initial_messages)
@@ -711,7 +711,9 @@ async def test_network_error_in_create_call(capsys):
     # Create mock client that raises ConnectionError
     mock_client = MagicMock()
     mock_client.calls = MagicMock()
-    mock_client.calls.create = AsyncMock(side_effect=ConnectionError("Network error occurred"))
+    mock_client.calls.create = AsyncMock(
+        side_effect=ConnectionError("Network error occurred")
+    )
 
     # Create mock args
     mock_args = MagicMock()
@@ -735,6 +737,7 @@ async def test_network_error_in_create_call(capsys):
 @pytest.mark.asyncio
 async def test_api_error_in_create_call(capsys):
     """Test handling of API errors in create_call function."""
+
     # Define a custom APIError
     class APIError(Exception):
         def __init__(self, message, status_code=400):
@@ -1054,7 +1057,7 @@ async def test_invalid_initial_messages_json_format():
     # Call the function and expect a ValueError
     with pytest.raises(ValueError) as excinfo:
         await create_call(mock_client, mock_args)
-    
+
     # Verify that the error message indicates an invalid JSON format
     assert "Invalid JSON format" in str(excinfo.value)
 
@@ -1082,6 +1085,6 @@ async def test_non_list_initial_messages_json():
     # Call the function and expect a ValueError
     with pytest.raises(ValueError) as excinfo:
         await create_call(mock_client, mock_args)
-    
+
     # Verify that the error message indicates the value must be a list
     assert "must be a JSON list" in str(excinfo.value)

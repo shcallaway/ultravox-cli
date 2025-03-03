@@ -93,7 +93,11 @@ async def create_call(client: UltravoxClient, args: argparse.Namespace) -> str:
     initial_messages: List[Dict[str, Any]] = []
 
     # Process initial_messages_json if provided
-    if hasattr(args, 'initial_messages_json') and args.initial_messages_json and not isinstance(args.initial_messages_json, MagicMock):
+    if (
+        hasattr(args, "initial_messages_json")
+        and args.initial_messages_json
+        and not isinstance(args.initial_messages_json, MagicMock)
+    ):
         try:
             initial_messages = json.loads(args.initial_messages_json)
             if not isinstance(initial_messages, list):
@@ -140,7 +144,7 @@ def _add_query_param(url: str, key: str, value: str) -> str:
     query = dict(urllib.parse.parse_qsl(url_parts[4]))
     query.update({key: value})
     url_parts[4] = urllib.parse.urlencode(query)
-    
+
     return urllib.parse.urlunparse(url_parts)
 
 
