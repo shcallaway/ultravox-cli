@@ -42,7 +42,7 @@ class WebsocketSession(pyee.asyncio.AsyncIOEventEmitter):
         """
         Start the session by connecting to the WebSocket.
         """
-        logging.info(f"Connecting to {self._url}")
+        logging.debug(f"Connecting to {self._url}")
         self._socket = await ws_client.connect(self._url)
         self._receive_task = asyncio.create_task(self._socket_receive(self._socket))
 
@@ -50,7 +50,7 @@ class WebsocketSession(pyee.asyncio.AsyncIOEventEmitter):
         """
         End the session, closing the connection and ending the call.
         """
-        logging.info("Stopping WebSocket session...")
+        logging.debug("Stopping WebSocket session...")
         await self._async_close(
             self._socket.close() if self._socket else None,
             self._async_cancel(self._receive_task),
@@ -70,13 +70,13 @@ class WebsocketSession(pyee.asyncio.AsyncIOEventEmitter):
             async for message in socket:
                 await self._on_socket_message(message)
         except asyncio.CancelledError:
-            logging.info("Socket receive task cancelled")
+            logging.debug("Socket receive task cancelled")
         except ws_exceptions.ConnectionClosedOK:
-            logging.info("Socket closed normally")
+            logging.debug("Socket closed normally")
         except ws_exceptions.ConnectionClosedError as e:
             self.emit("error", e)
             return
-        logging.info("Socket receive task completed")
+        logging.debug("Socket receive task completed")
         self.emit("ended")
 
     async def _on_socket_message(self, payload: Union[str, bytes]) -> None:
@@ -128,7 +128,7 @@ class WebsocketSession(pyee.asyncio.AsyncIOEventEmitter):
                 msg["toolName"], msg["invocationId"], msg.get("parameters", {})
             )
         elif msg_type == "debug":
-            logging.info(f"Debug message: {msg.get('message')}")
+            logging.debug(f"Debug message: {msg.get('message')}")
         else:
             logging.warning(f"Unhandled message type: {msg_type}")
 
@@ -143,7 +143,7 @@ class WebsocketSession(pyee.asyncio.AsyncIOEventEmitter):
             invocation_id: The invocation ID
             parameters: The tool parameters
         """
-        logging.info(f"Client tool call: {tool_name}")
+        logging.debug(f"Client tool call: {tool_name}")
 
         response: Dict[str, Any] = {
             "type": "client_tool_result",
@@ -208,7 +208,7 @@ class WebsocketSession(pyee.asyncio.AsyncIOEventEmitter):
                 )
                 to_report = RuntimeError(error_msg)
 
-            logging.warning("Error during async close", exc_info=to_report)
+            logging.warning("Error during async close", exc_debug=to_report)
 
     async def _async_cancel(self, *tasks_or_none: Optional[asyncio.Task]) -> None:
         """
@@ -238,5 +238,5 @@ class WebsocketSession(pyee.asyncio.AsyncIOEventEmitter):
 
         message = {"type": "input_text_message", "text": text}
 
-        logging.info(f"Sending user message: {text}")
+        logging.debug(f"Sending user message: {text}")
         await self._socket.send(json.dumps(message))
