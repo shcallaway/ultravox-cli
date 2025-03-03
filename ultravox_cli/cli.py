@@ -16,10 +16,6 @@ parser = argparse.ArgumentParser(prog="websocket_client.py")
 parser.add_argument(
     "--verbose", "-v", action="store_true", help="Show verbose session information"
 )
-parser.add_argument(
-    "--very-verbose", "-vv", action="store_true", help="Show debug logs too"
-)
-
 parser.add_argument("--voice", "-V", type=str, help="Name (or id) of voice to use")
 parser.add_argument(
     "--system-prompt",
@@ -410,9 +406,9 @@ if __name__ == "__main__":
     # Parse the command line arguments
     args = parser.parse_args()
 
-    if args.very_verbose:
+    if args.verbose:
         logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
-    elif args.verbose:
+    else:
         logging.basicConfig(stream=sys.stdout, level=logging.INFO)
 
     asyncio.run(main())

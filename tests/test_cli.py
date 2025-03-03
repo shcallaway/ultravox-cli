@@ -312,10 +312,9 @@ class TestCLIArgumentParsing(unittest.TestCase):
         # Create a mock args object with default values
         mock_args = argparse.Namespace(
             verbose=False,
-            very_verbose=False,
             voice=None,
-            system_prompt="Test system prompt",
-            temperature=0.8,
+            system_prompt="You are a helpful, harmless assistant",
+            temperature=0.7,
             secret_menu=False,
             experimental_messages=False,
             prior_call_id=None,
@@ -336,10 +335,9 @@ class TestCLIArgumentParsing(unittest.TestCase):
 
         # Check the default values
         self.assertFalse(args.verbose)
-        self.assertFalse(args.very_verbose)
         self.assertIsNone(args.voice)
-        self.assertEqual(args.system_prompt, "Test system prompt")
-        self.assertEqual(args.temperature, 0.8)
+        self.assertEqual(args.system_prompt, "You are a helpful, harmless assistant")
+        self.assertEqual(args.temperature, 0.7)
         self.assertFalse(args.secret_menu)
         self.assertFalse(args.experimental_messages)
 
@@ -349,7 +347,6 @@ class TestCLIArgumentParsing(unittest.TestCase):
         # Create a mock args object with verbose set to True
         mock_args = argparse.Namespace(
             verbose=True,
-            very_verbose=False,
             voice=None,
             system_prompt="Test system prompt",
             temperature=0.8,
@@ -373,7 +370,6 @@ class TestCLIArgumentParsing(unittest.TestCase):
 
         # Check the verbose flag
         self.assertTrue(args.verbose)
-        self.assertFalse(args.very_verbose)
 
     @patch("argparse.ArgumentParser.parse_args")
     def test_voice_argument(self, mock_parse_args: Any) -> None:
@@ -381,7 +377,6 @@ class TestCLIArgumentParsing(unittest.TestCase):
         # Create a mock args object with voice set
         mock_args = argparse.Namespace(
             verbose=False,
-            very_verbose=False,
             voice="test-voice",
             system_prompt="Test system prompt",
             temperature=0.8,
@@ -412,7 +407,6 @@ class TestCLIArgumentParsing(unittest.TestCase):
         # Create a mock args object with system_prompt set
         mock_args = argparse.Namespace(
             verbose=False,
-            very_verbose=False,
             voice=None,
             system_prompt="Custom system prompt",
             temperature=0.8,
@@ -443,7 +437,6 @@ class TestCLIArgumentParsing(unittest.TestCase):
         # Create a mock args object with temperature set
         mock_args = argparse.Namespace(
             verbose=False,
-            very_verbose=False,
             voice=None,
             system_prompt="Test system prompt",
             temperature=0.5,
@@ -474,7 +467,6 @@ class TestCLIArgumentParsing(unittest.TestCase):
         # Create a mock args object with secret_menu set to True
         mock_args = argparse.Namespace(
             verbose=False,
-            very_verbose=False,
             voice=None,
             system_prompt="Test system prompt",
             temperature=0.8,
@@ -505,7 +497,6 @@ class TestCLIArgumentParsing(unittest.TestCase):
         # Create a mock args object with experimental_messages set to True
         mock_args = argparse.Namespace(
             verbose=False,
-            very_verbose=False,
             voice=None,
             system_prompt="Test system prompt",
             temperature=0.8,
@@ -536,7 +527,6 @@ class TestCLIArgumentParsing(unittest.TestCase):
         # Create a mock args object with api_version set
         mock_args = argparse.Namespace(
             verbose=False,
-            very_verbose=False,
             voice=None,
             system_prompt="Test system prompt",
             temperature=0.8,
@@ -567,7 +557,6 @@ class TestCLIArgumentParsing(unittest.TestCase):
         # Create a mock args object with multiple arguments set
         mock_args = argparse.Namespace(
             verbose=True,
-            very_verbose=True,
             voice="test-voice",
             system_prompt="Custom system prompt",
             temperature=0.5,
@@ -591,7 +580,6 @@ class TestCLIArgumentParsing(unittest.TestCase):
 
         # Check all arguments
         self.assertTrue(args.verbose)
-        self.assertTrue(args.very_verbose)
         self.assertEqual(args.voice, "test-voice")
         self.assertEqual(args.system_prompt, "Custom system prompt")
         self.assertEqual(args.temperature, 0.5)
