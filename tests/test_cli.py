@@ -7,7 +7,6 @@ import unittest
 from unittest.mock import MagicMock, AsyncMock, patch
 import pytest
 from typing import Any, Dict, List
-from ultravox_cli.ultravox_client.client import UltravoxClient
 from ultravox_cli.cli import (
     _add_query_param,
     create_call,

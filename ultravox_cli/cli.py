@@ -25,9 +25,10 @@ parser.add_argument(
     "--system-prompt",
     help="System prompt to use for the call",
     default=f"""
-You are a friendly assistant. Local time is currently: ${datetime.datetime.now().isoformat()}
-The user is talking to you over voice on their phone, and your response will be read out
-loud with realistic text-to-speech (TTS) technology.
+You are a friendly assistant. Local time is currently:
+${datetime.datetime.now().isoformat()}
+The user is talking to you over voice on their phone, and your response will be
+read out loud with realistic text-to-speech (TTS) technology.
 """,
 )
 
@@ -48,13 +49,16 @@ parser.add_argument(
 args = None
 
 
-# This is an example tool implementation to demonstrate how to create and use tools with Ultravox
+# This is an example tool implementation to demonstrate how to create and use tools with
+# Ultravox
 # It shows a pattern for implementing a simple tool that returns structured data
-# In a real application, you would implement your own tools that provide actual functionality
+# In a real application, you would implement your own tools that provide actual
+# functionality
 async def get_secret_menu(parameters: Dict[str, Any]) -> List[Dict[str, Any]]:
     """Handler for the getSecretMenu tool.
 
-    This is an example tool that demonstrates how to implement a tool that returns structured data.
+    This is an example tool that demonstrates how to implement a tool that returns
+    structured data.
     The tool returns a mock "secret menu" with items and prices.
     In a real application, you might fetch this data from a database or API.
     """
