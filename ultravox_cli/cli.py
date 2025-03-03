@@ -10,58 +10,27 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from ultravox_cli.ultravox_client.client import UltravoxClient
 
+default_system_prompt = f"""
+You are a drive-thru order taker for a donut shop called "Dr. Donut". Local time is
+currently: ${datetime.datetime.now().isoformat()}
+
+The user is talking to you over voice on their phone, and your response will be read out
+loud with realistic text-to-speech (TTS) technology.
+"""
+
 # Create the argument parser at module level
 parser = argparse.ArgumentParser(prog="websocket_client.py")
 
 parser.add_argument(
     "--verbose", "-v", action="store_true", help="Show verbose session information"
 )
+
 parser.add_argument("--voice", "-V", type=str, help="Name (or id) of voice to use")
+
 parser.add_argument(
     "--system-prompt",
     help="System prompt to use for the call",
-    default=f"""
-You are a drive-thru order taker for a donut shop called "Dr. Donut". Local time is
-currently: ${datetime.datetime.now().isoformat()}
-The user is talking to you over voice on their phone, and your response will be read out
-loud with realistic text-to-speech (TTS) technology.
-
-Follow every direction here when crafting your response:
-
-1. Use natural, conversational language that is clear and easy to follow (short
-sentences, simple words).
-1a. Be concise and relevant: Most of your responses should be a sentence or two, unless
-you're asked to go deeper. Don't monopolize the conversation.
-1b. Use discourse markers to ease comprehension. Never use the list format.
-
-2. Keep the conversation flowing.
-2a. Clarify: when there is ambiguity, ask clarifying questions, rather than make
-assumptions.
-2b. Don't implicitly or explicitly try to end the chat (i.e. do not end a response with
-"Talk soon!", or "Enjoy!").
-2c. Sometimes the user might just want to chat. Ask them relevant follow-up questions.
-2d. Don't ask them if there's anything else they need help with (e.g. don't say things
-like "How can I assist you further?").
-
-3. Remember that this is a voice conversation:
-3a. Don't use lists, markdown, bullet points, or other formatting that's not typically
-spoken aloud.
-3b. Don't use emoji.
-3c. Don't ask all your questions at once; that's not how real conversations flow.
-
-MENU:
-GLAZED DONUT $1.49
-CHOCOLATE FROSTED DONUT $1.49
-JELLY DONUT $1.49
-DONUT HOLES (10) $1.99
-DONUT HOLES (20) $3.49
-APPLE FRITTER $2.49
-BLUEBERRY MUFFIN $2.49
-VANILLA LATTE $3.49
-CARAMEL MACCHIATO $3.49
-MOCHA LATTE $3.49
-CARAMEL MOCHA LATTE $3.49
-""",
+    default=default_system_prompt,
 )
 
 parser.add_argument(
@@ -70,27 +39,32 @@ parser.add_argument(
     default=0.8,
     help="Temperature to use when creating the call",
 )
+
 parser.add_argument(
     "--experimental-messages",
     action="store_true",
     help="Use experimental messages API instead of the default. This is an "
     "experimental feature and may not work as expected.",
 )
+
 parser.add_argument(
     "--prior-call-id",
     type=str,
     help="Allows setting priorCallId during start call",
 )
+
 parser.add_argument(
     "--user-speaks-first",
     action="store_true",
     help="If set, sets FIRST_SPEAKER_USER",
 )
+
 parser.add_argument(
     "--initial-output-text",
     action="store_true",
     help="Sets the initial_output_medium to text",
 )
+
 parser.add_argument(
     "--api-version",
     type=int,
@@ -133,25 +107,22 @@ async def create_call(client: UltravoxClient, args: argparse.Namespace) -> str:
     system_prompt = args.system_prompt
     selected_tools: List[Dict[str, Any]] = []
 
-    # EXAMPLE: Adding a tool to the selected tools list
-    # This demonstrates how to:
-    # 1. Add instructions about a tool to the system prompt
-    # 2. Configure a tool to be used by the model during the call
-    # In a real application, you would customize this based on your specific tools
-    system_prompt += (
-        "\n\nThere is also a secret menu that changes daily. "
-        "If the user asks about it, use the getSecretMenu tool "
-        "to look up today's secret menu items."
-    )
-    selected_tools.append(
-        {
-            "temporaryTool": {
-                "modelToolName": "getSecretMenu",
-                "description": "Looks up today's secret menu items.",
-                "client": {},
-            },
-        }
-    )
+    # Uncomment to use an example tool
+    # system_prompt += (
+    #     "\n\nThere is also a secret menu that changes daily. "
+    #     "If the user asks about it, use the getSecretMenu tool "
+    #     "to look up today's secret menu items."
+    # )
+
+    # selected_tools.append(
+    #     {
+    #         "temporaryTool": {
+    #             "modelToolName": "getSecretMenu",
+    #             "description": "Looks up today's secret menu items.",
+    #             "client": {},
+    #         },
+    #     }
+    # )
 
     initial_messages: List[Dict[str, Any]] = []
 
@@ -190,6 +161,7 @@ async def create_call(client: UltravoxClient, args: argparse.Namespace) -> str:
         # Add query parameters
         if args.api_version:
             join_url = _add_query_param(join_url, "apiVersion", str(args.api_version))
+        
         if args.experimental_messages:
             join_url = _add_query_param(
                 join_url, "experimentalMessages", args.experimental_messages
@@ -209,6 +181,7 @@ def _add_query_param(url: str, key: str, value: str) -> str:
     query = dict(urllib.parse.parse_qsl(url_parts[4]))
     query.update({key: value})
     url_parts[4] = urllib.parse.urlencode(query)
+    
     return urllib.parse.urlunparse(url_parts)
 
 
@@ -383,11 +356,8 @@ async def main() -> None:
     # Join the call
     session = await client.join_call(join_url)
 
-    # EXAMPLE: Registering a tool with the session
-    # This connects the tool implementation (get_secret_menu function)
-    # with the tool name that the model will use ("getSecretMenu")
-    # In a real application, you would register your own tool implementations
-    session.register_tool("getSecretMenu", get_secret_menu)
+    # Uncomment to use an example tool
+    # session.register_tool("getSecretMenu", get_secret_menu)
 
     done = asyncio.Event()
 
