@@ -236,10 +236,7 @@ class WebsocketSession(pyee.asyncio.AsyncIOEventEmitter):
         if not self._socket:
             raise RuntimeError("Socket not connected. Call start() first.")
 
-        message = {
-            "type": "input_text_message",
-            "text": text
-        }
+        message = {"type": "input_text_message", "text": text}
 
         logging.info(f"Sending user message: {text}")
         await self._socket.send(json.dumps(message))

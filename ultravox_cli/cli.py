@@ -129,7 +129,7 @@ async def main() -> None:
 
     done = asyncio.Event()
     loop = asyncio.get_running_loop()
-    
+
     # State variables for conversation tracking
     final_inference: Optional[str] = None
     agent_response: str = ""
@@ -138,7 +138,7 @@ async def main() -> None:
     # State variables for output management
     current_final_response = ""  # Accumulates the final response text
     agent_response_complete = asyncio.Event()  # Signals when a response is complete
-    
+
     @session.on("state")  # type: ignore
     async def on_state(state: str) -> None:
         """Handle state changes in the conversation."""
@@ -146,47 +146,47 @@ async def main() -> None:
             print("User: ", end="", flush=True)
         elif state == "thinking":
             print("Agent thinking...", end="", flush=True)
-    
+
     @session.on("output")  # type: ignore
     async def on_output(text: str, final: bool) -> None:
         """Handle output from the agent.
-        
+
         Args:
             text: The text output from the agent
             final: Whether this is a final response or not
         """
         nonlocal final_inference, agent_response, current_final_response
-        
+
         # Skip non-final responses (streaming updates)
         if not final:
             return
-        
+
         # Process final responses
         if text.strip() and text.strip() not in current_final_response:
             # Clear the "thinking" status
             print("\r" + " " * 20 + "\r", end="", flush=True)
-            
+
             # Print the actual response
             print(f"Agent: {text.strip()}")
             current_final_response += text.strip() + " "  # Add a space between chunks
-            
+
             # Determine if this is the end of a complete response
             text_chunk = text.strip()
             is_complete = False
-            
+
             # Check for completion indicators
             if text_chunk.endswith((".", "!", "?")):  # Has ending punctuation
                 is_complete = True
             elif len(text_chunk) < 50:  # Short messages are likely complete
                 is_complete = True
-                
+
             if is_complete:
                 # Mark the response as complete
                 final_inference = current_final_response.strip()
                 agent_response = current_final_response.strip()
                 print()  # Add spacing between turns
                 agent_response_complete.set()
-    
+
     @session.on("ended")  # type: ignore
     async def on_ended() -> None:
         """Handle session end event."""
@@ -203,9 +203,11 @@ async def main() -> None:
     loop.add_signal_handler(signal.SIGTERM, lambda: done.set())
 
     await session.start()
-    
-    print("Welcome to UltraVox CLI! Type 'exit', 'quit', or 'bye' to end the conversation.")
-    
+
+    print(
+        "Welcome to UltraVox CLI! Type 'exit', 'quit', or 'bye' to end the conversation."
+    )
+
     # Main conversation loop
     try:
         while is_conversation_active and not done.is_set():
@@ -213,25 +215,25 @@ async def main() -> None:
                 # Wait for the agent's first response or previous response to complete
                 while not agent_response and not done.is_set():
                     await asyncio.sleep(0.1)
-                
+
                 # Get user input
                 user_input = input("User: ").strip()
-                
+
                 # Check for exit commands
                 if user_input.lower() in ["exit", "quit", "bye"]:
                     print("Goodbye!")
                     is_conversation_active = False
                     done.set()
                     break
-                    
+
                 # Reset the agent response for the next turn
                 agent_response = ""
                 current_final_response = ""
                 agent_response_complete.clear()
-                
+
                 # Send the user message to the agent
                 await session.send_text_message(user_input)
-                
+
             except KeyboardInterrupt:
                 print("\nGoodbye!")
                 is_conversation_active = False
