@@ -99,7 +99,7 @@ async def test_create_call():
 
 @pytest.mark.asyncio
 async def test_create_call_with_secret_menu():
-    """Test the create_call function with secret menu enabled."""
+    """Test the create_call function with standard parameters."""
     # Create mock client
     mock_client = MagicMock()
     mock_client.calls = MagicMock()
@@ -112,7 +112,7 @@ async def test_create_call_with_secret_menu():
     mock_args.system_prompt = "Test system prompt"
     mock_args.temperature = 0.8
     mock_args.voice = None
-    mock_args.secret_menu = True
+    mock_args.initial_messages_json = None
     mock_args.api_version = None
     mock_args.experimental_messages = False
 
@@ -128,16 +128,13 @@ async def test_create_call_with_secret_menu():
     # Check that the call was made with the right parameters
     call_args, call_kwargs = mock_client.calls.create.call_args
 
-    # Verify that "secret menu" is in the system_prompt
+    # Verify system prompt was passed correctly
     assert "system_prompt" in call_kwargs
-    assert "secret menu" in call_kwargs["system_prompt"]
+    assert call_kwargs["system_prompt"] == "Test system prompt"
 
-    # Verify that selected_tools was included in the kwargs
+    # Verify that no additional tools were added
     assert "selected_tools" in call_kwargs
-    assert any(
-        tool.get("temporaryTool", {}).get("modelToolName") == "getSecretMenu"
-        for tool in call_kwargs["selected_tools"]
-    )
+    assert call_kwargs["selected_tools"] == []
 
 
 @pytest.mark.asyncio
@@ -709,70 +706,64 @@ class TestErrorHandling(unittest.TestCase):
 
 
 @pytest.mark.asyncio
-async def test_network_error_in_create_call() -> None:
-    """Test that the application handles network errors during call creation."""
+async def test_network_error_in_create_call(capsys):
+    """Test handling of network errors in create_call function."""
+    # Create mock client that raises ConnectionError
+    mock_client = MagicMock()
+    mock_client.calls = MagicMock()
+    mock_client.calls.create = AsyncMock(side_effect=ConnectionError("Network error occurred"))
+
     # Create mock args
     mock_args = MagicMock()
-    mock_args.voice = None
-    mock_args.system_prompt = "Test prompt"
+    mock_args.system_prompt = "Test system prompt"
     mock_args.temperature = 0.8
-    mock_args.secret_menu = False
-    mock_args.experimental_messages = False
-    mock_args.prior_call_id = None
-    mock_args.user_speaks_first = False
-    mock_args.initial_output_text = False
+    mock_args.voice = None
+    mock_args.initial_messages_json = None
     mock_args.api_version = None
+    mock_args.experimental_messages = False
 
-    # Create mock client with calls attribute
-    mock_client = MagicMock(spec=UltravoxClient)
-    mock_client.calls = MagicMock()
-
-    # Make client.calls.create raise a network error
-    mock_client.calls.create.side_effect = asyncio.TimeoutError("Connection timeout")
-
-    # Test that the error is raised and handled properly
-    with pytest.raises(asyncio.TimeoutError):
+    # Test handling of network errors
+    with pytest.raises(SystemExit) as e:
         await create_call(mock_client, mock_args)
 
-    # Verify that client.calls.create was called once
-    mock_client.calls.create.assert_called_once()
+    # Verify the error code and message
+    assert e.value.code == 1
+    captured = capsys.readouterr()
+    assert "Network error" in captured.err
 
 
 @pytest.mark.asyncio
-async def test_api_error_in_create_call() -> None:
-    """Test that the application handles API errors during call creation."""
-    # Create mock args
-    mock_args = MagicMock()
-    mock_args.voice = None
-    mock_args.system_prompt = "Test prompt"
-    mock_args.temperature = 0.8
-    mock_args.secret_menu = False
-    mock_args.experimental_messages = False
-    mock_args.prior_call_id = None
-    mock_args.user_speaks_first = False
-    mock_args.initial_output_text = False
-    mock_args.api_version = None
-
-    # Create mock client with calls attribute
-    mock_client = MagicMock(spec=UltravoxClient)
-    mock_client.calls = MagicMock()
-
-    # Define a custom API error
+async def test_api_error_in_create_call(capsys):
+    """Test handling of API errors in create_call function."""
+    # Define a custom APIError
     class APIError(Exception):
-        def __init__(self, message: str, status_code: int = 400):
+        def __init__(self, message, status_code=400):
             self.message = message
             self.status_code = status_code
-            super().__init__(message)
+            super().__init__(self.message)
 
-    # Make client.calls.create raise an API error
-    mock_client.calls.create.side_effect = APIError("Invalid API key", 401)
+    # Create mock client that raises APIError
+    mock_client = MagicMock()
+    mock_client.calls = MagicMock()
+    mock_client.calls.create = AsyncMock(side_effect=APIError("Invalid request", 400))
 
-    # Test that the error is raised and handled properly
-    with pytest.raises(APIError):
+    # Create mock args
+    mock_args = MagicMock()
+    mock_args.system_prompt = "Test system prompt"
+    mock_args.temperature = 0.8
+    mock_args.voice = None
+    mock_args.initial_messages_json = None
+    mock_args.api_version = None
+    mock_args.experimental_messages = False
+
+    # Test handling of API errors
+    with pytest.raises(SystemExit) as e:
         await create_call(mock_client, mock_args)
 
-    # Verify that client.calls.create was called once
-    mock_client.calls.create.assert_called_once()
+    # Verify the error code and message
+    assert e.value.code == 1
+    captured = capsys.readouterr()
+    assert "Invalid request" in captured.err
 
 
 @pytest.mark.asyncio
@@ -1012,6 +1003,7 @@ async def test_cli_integration():
     mock_args.user_speaks_first = False
     mock_args.initial_output_text = False
     mock_args.api_version = None
+    mock_args.initial_messages_json = None
 
     # Create a mock client
     mock_client = MockUltravoxClient(api_key="test_key")

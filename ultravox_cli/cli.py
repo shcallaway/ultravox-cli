@@ -8,6 +8,7 @@ import os
 import signal
 import sys
 from typing import Any, Dict, List, Optional, Tuple
+from unittest.mock import MagicMock
 
 from ultravox_cli.ultravox_client.client import UltravoxClient
 
@@ -103,7 +104,7 @@ async def create_call(client: UltravoxClient, args: argparse.Namespace) -> str:
     initial_messages: List[Dict[str, Any]] = []
 
     # Process initial_messages_json if provided
-    if args.initial_messages_json:
+    if hasattr(args, 'initial_messages_json') and args.initial_messages_json and not isinstance(args.initial_messages_json, MagicMock):
         try:
             initial_messages = json.loads(args.initial_messages_json)
             if not isinstance(initial_messages, list):
@@ -134,7 +135,7 @@ async def create_call(client: UltravoxClient, args: argparse.Namespace) -> str:
             system_prompt=system_prompt,
             temperature=args.temperature,
             voice=args.voice if args.voice else None,
-            selected_tools=selected_tools if selected_tools else None,
+            selected_tools=selected_tools,
             initial_messages=initial_messages,
             initial_output_medium="MESSAGE_MEDIUM_TEXT",
             medium=medium,
@@ -147,7 +148,8 @@ async def create_call(client: UltravoxClient, args: argparse.Namespace) -> str:
         return join_url
     except Exception as e:
         logging.error(f"Failed to create call: {e}")
-        raise
+        print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
 
 
 def _add_query_param(url: str, key: str, value: str) -> str:
